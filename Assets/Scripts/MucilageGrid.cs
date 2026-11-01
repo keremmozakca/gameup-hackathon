@@ -174,10 +174,4 @@ public class MucilageGrid : MonoBehaviour
     public bool InBounds(Vector2Int c) => c.x >= 0 && c.x < W && c.y >= 0 && c.y < H;
     public bool IsInfected(Vector2Int c) => InBounds(c) && hp[c.x, c.y] > 0f;
     public bool IsCore(Vector2Int c) => InBounds(c) && isCore[c.x, c.y];
-
-    // Geçici test yazısı (sol üstte). Sonra gerçek arayüzle değiştireceğiz.
-    void OnGUI()
-    {
-        GUI.Label(new Rect(10, 10, 400, 25), $"Yoğunluk: %{Density * 100f:0}  ({InfectedCount}/{W * H})");
-    }
 }

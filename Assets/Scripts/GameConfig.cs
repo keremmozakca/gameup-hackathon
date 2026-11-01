@@ -107,8 +107,14 @@ public class GameConfig : ScriptableObject
     public float scorePerSecond = 2f;
 
     [Header("Kombo")]
-    [Tooltip("Yüzeye çıkmadan temizlenen her kare komboyu bu kadar artırır")]
+    [Tooltip("Su altında temizlenen her normal kare komboyu bu kadar artırır")]
     public float comboStep = 0.1f;
+
+    [Tooltip("Su altında temizlenen her çekirdek komboyu bu kadar artırır")]
+    public float comboCoreStep = 0.5f;
+
+    [Tooltip("Bu kadar saniye hiç kare temizlenmezse kombo düşer (x1'e döner)")]
+    public float comboTimeout = 3f;
 
     [Tooltip("Kombo çarpanının üst sınırı")]
     public float comboMax = 3f;

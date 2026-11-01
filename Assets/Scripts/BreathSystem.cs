@@ -83,11 +83,4 @@ public class BreathSystem : MonoBehaviour
         Breath = cfg.breathMax;
         player.CanControl = true;
     }
-
-    // Geçici test yazısı. Adım 9'da karakter üstünde nefes barıyla değiştireceğiz.
-    void OnGUI()
-    {
-        string state = IsFainted ? "  BAYILDIN!" : SurfaceBlocked ? "  Yüzey kapalı!" : IsRefilling ? "  Nefes alıyor" : "";
-        GUI.Label(new Rect(10, 30, 400, 25), $"Nefes: {Breath:0.0} / {cfg.breathMax:0}{state}");
-    }
 }

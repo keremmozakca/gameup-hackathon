@@ -102,16 +102,4 @@ public class GameManager : MonoBehaviour
         Time.timeScale = s == State.Playing ? 1f : 0f;
         OnStateChanged?.Invoke(s);
     }
-
-    // Geçici test yazıları. Adım 9'da gerçek arayüzle değiştireceğiz.
-    void OnGUI()
-    {
-        GUI.Label(new Rect(10, 50, 400, 25), $"Sıcaklık: {Temperature:0} °C  (aşama {Stage})  Süre: {ElapsedTime:0} sn");
-
-        Rect center = new Rect(Screen.width / 2 - 150, Screen.height / 2 - 20, 300, 40);
-        if (CurrentState == State.Menu)
-            GUI.Box(center, "MARMARA'NIN NEFESİ\nBaşlamak için SPACE");
-        else if (CurrentState == State.GameOver)
-            GUI.Box(center, $"MARMARA NEFESSİZ KALDI\nYeniden başlamak için R");
-    }
 }

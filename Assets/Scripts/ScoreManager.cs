@@ -2,7 +2,8 @@ using UnityEngine;
 
 // Skor, kombo, rütbe ve en iyi 5 skor. GameManager objesine ekle.
 // Temizlenen kareler ve hayatta kalınan süre puan getirir.
-// Kombo: yüzeye çıkmadan temizlenen her kare çarpanı artırır; nefes almak veya bayılmak sıfırlar.
+// Kombo (dalış serisi): sadece su altında büyür. Yüzeye değmek (kapalı yüzey dahil), bayılmak
+// veya comboTimeout saniye hiç kare temizlememek komboyu x1'e düşürür.
 public class ScoreManager : MonoBehaviour
 {
     public static ScoreManager I { get; private set; }
@@ -16,6 +17,7 @@ public class ScoreManager : MonoBehaviour
 
     public int Score => Mathf.FloorToInt(score);
     public float Combo { get; private set; } = 1f;
+    public float ComboTime01 => Combo > 1f ? comboTimer / cfg.comboTimeout : 0f; // Kombonun düşmesine kalan süre (0–1)
     public int RankIndex { get; private set; }
     public string RankName => cfg.rankNames[RankIndex];
     public bool IsMaxRank => RankIndex >= cfg.rankThresholds.Length - 1;
@@ -27,7 +29,9 @@ public class ScoreManager : MonoBehaviour
     public event System.Action<string> OnRankUp;       // yeni rütbe adı
     public event System.Action<int> OnPointsGained;    // tek seferde kazanılan puan (kare temizleme)
 
-    float score; // Saniye puanı küsuratlı biriktiği için float tutuyoruz
+    float score;      // Saniye puanı küsuratlı biriktiği için float tutuyoruz
+    float comboTimer; // Kombonun düşmesine kalan saniye
+    PlayerController player;
 
     void Awake()
     {
@@ -37,20 +41,14 @@ public class ScoreManager : MonoBehaviour
 
     void Start()
     {
+        player = breath.GetComponent<PlayerController>();
         grid.OnCellCleared += HandleCellCleared;
-        breath.OnBreathTaken += ResetCombo;
-        breath.OnFainted += ResetCombo;
         GameManager.I.OnStateChanged += HandleStateChanged;
     }
 
     void OnDestroy()
     {
         if (grid) grid.OnCellCleared -= HandleCellCleared;
-        if (breath)
-        {
-            breath.OnBreathTaken -= ResetCombo;
-            breath.OnFainted -= ResetCombo;
-        }
         if (GameManager.I) GameManager.I.OnStateChanged -= HandleStateChanged;
     }
 
@@ -58,9 +56,17 @@ public class ScoreManager : MonoBehaviour
     {
         if (GameManager.I.CurrentState != GameManager.State.Playing) return;
         AddScore(cfg.scorePerSecond * Time.deltaTime);
+
+        // Dalış bitti (yüzeye değdi veya bayıldı) ya da süre doldu → kombo düşer
+        comboTimer -= Time.deltaTime;
+        if (!IsDiving || comboTimer <= 0f) ResetCombo();
     }
 
-    // Kare temizlendi: taban puan × derinlik çarpanı × kombo, sonra kombo artar
+    // Kombo sadece su altında ve baygın değilken geçerli
+    bool IsDiving => !player.AtSurface && !breath.IsFainted;
+
+    // Kare temizlendi: taban puan × derinlik çarpanı × kombo.
+    // Su altındaysa sonra kombo artar ve süresi yenilenir; yüzeyden emerken kombo büyümez.
     void HandleCellCleared(Vector2Int cell, bool wasCore)
     {
         float points = wasCore ? cfg.scoreCore : cfg.scoreMucilage;
@@ -70,10 +76,16 @@ public class ScoreManager : MonoBehaviour
         AddScore(points);
         OnPointsGained?.Invoke(Mathf.RoundToInt(points));
 
-        Combo = Mathf.Min(Combo + cfg.comboStep, cfg.comboMax);
+        if (!IsDiving) return;
+        Combo = Mathf.Min(Combo + (wasCore ? cfg.comboCoreStep : cfg.comboStep), cfg.comboMax);
+        comboTimer = cfg.comboTimeout;
     }
 
-    void ResetCombo() => Combo = 1f;
+    void ResetCombo()
+    {
+        Combo = 1f;
+        comboTimer = 0f;
+    }
 
     void AddScore(float amount)
     {
@@ -115,21 +127,5 @@ public class ScoreManager : MonoBehaviour
 
         for (int i = 0; i < TopCount; i++) PlayerPrefs.SetInt("top" + i, TopScores[i]);
         PlayerPrefs.Save();
-    }
-
-    // Geçici test yazıları. Adım 9'da gerçek arayüzle değiştireceğiz.
-    void OnGUI()
-    {
-        GUI.Label(new Rect(10, 70, 400, 25), $"Skor: {Score}  Kombo: x{Combo:0.0}  Rütbe: {RankName}");
-
-        if (GameManager.I.CurrentState != GameManager.State.GameOver) return;
-
-        string next = IsMaxRank ? "En yüksek rütbedesin!" : $"Sonraki rütbeye {PointsToNextRank} puan kaldı";
-        string best = IsNewBest ? "  YENİ REKOR!" : "";
-        string list = "";
-        for (int i = 0; i < TopCount; i++) list += $"\n{i + 1}. {TopScores[i]}";
-
-        GUI.Box(new Rect(Screen.width / 2 - 150, Screen.height / 2 + 30, 300, 150),
-            $"Skor: {Score}{best}\n{RankName} — {next}\n\nEn iyi skorlar:{list}");
     }
 }
