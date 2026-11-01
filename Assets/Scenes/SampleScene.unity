@@ -684,6 +684,7 @@ GameObject:
   - component: {fileID: 1262255891}
   - component: {fileID: 1262255890}
   - component: {fileID: 1262255889}
+  - component: {fileID: 1262255892}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -823,6 +824,20 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
+--- !u!114 &1262255892
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1262255886}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 761d75a0d03fa2641b503c2c96d60fb0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BreathSystem
+  cfg: {fileID: 11400000, guid: 4930cfa1688079a478ed8b616e5f992d, type: 2}
+  grid: {fileID: 671075126}
 --- !u!1 &2097696242
 GameObject:
   m_ObjectHideFlags: 0

@@ -53,4 +53,21 @@ public class GameConfig : ScriptableObject
 
     [Tooltip("Emme konisinin toplam açısı (derece)")]
     [Range(1f, 180f)] public float suctionAngle = 50f;
+
+    // ---------- ADIM 6: NEFES ----------
+    [Header("Nefes")]
+    [Tooltip("Su altında nefes kaç saniye yeter")]
+    public float breathMax = 12f;
+
+    [Tooltip("Müsilajın içindeyken nefes kaç kat hızlı biter (1.5 = %50 daha hızlı)")]
+    public float mucilageBreathMultiplier = 1.5f;
+
+    [Tooltip("Yüzeyde boştan tama dolması kaç saniye sürer")]
+    public float breathRefillTime = 2.5f;
+
+    [Tooltip("Nefes bitince kaç saniye kontrol olmadan baygın kalır")]
+    public float faintDuration = 4f;
+
+    [Tooltip("Bayılınca dalgıcın ışınlandığı tekne konumu")]
+    public Vector2 boatPosition = new Vector2(16f, 13.5f);
 }

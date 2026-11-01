@@ -27,9 +27,12 @@ Ana fikir: "Deniz nefes alamıyor, sen de alamıyorsun." Hedef oynanış: tur ba
    WASD yüzme, müsilajda yavaşlama, sınırlar (SurfaceY = H - 0.5, AtSurface, CurrentCell, CanControl).
 5. `SuctionTool.cs` (Player üzerinde) + koni görseli `SuctionCone` alt objesi (LineRenderer). `MucilageGrid.Damage` ve
    `OnCellCleared(cell, wasCore)` eventi var. Kurulum menüsü: "Marmara > Emme Aracını Kur" (`Assets/Editor/SuctionSetup.cs`).
+6. `BreathSystem.cs` (Player üzerinde): Breath, Breath01, IsFainted, IsRefilling, SurfaceBlocked; eventler `OnBreathTaken`, `OnFainted`.
+   Geçici OnGUI yazısı var. Kurulum menüsü: "Marmara > Nefes Sistemini Kur".
 
 Mevcut GameConfig alanları: width, height, startMucilageCells, startCores, spreadInterval, spreadChance, coreSpreadChance, swimForce, mucilageSpeedMultiplier,
-mucilageHp, coreHp, suctionPower, suctionRange, suctionAngle.
+mucilageHp, coreHp, suctionPower, suctionRange, suctionAngle,
+breathMax, mucilageBreathMultiplier, breathRefillTime, faintDuration, boatPosition.
 
 ## Kalan adımlar (bu sırayla)
 5. **Emme (SuctionTool):** Sol tık basılı → fare yönünde koni (menzil 3, açı 50°). Konideki karelerin hp'si `suctionPower * dt` azalır.
