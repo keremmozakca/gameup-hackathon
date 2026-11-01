@@ -17,6 +17,8 @@ public class ScoreManager : MonoBehaviour
 
     public int Score => Mathf.FloorToInt(score);
     public float Combo { get; private set; } = 1f;
+    public float ComboMax => RankIndex >= 4 ? cfg.perkComboMax : cfg.comboMax; // Denizin Nefesi avantajı
+    public int FishRescued { get; private set; }
     public float ComboTime01 => Combo > 1f ? comboTimer / cfg.comboTimeout : 0f; // Kombonun düşmesine kalan süre (0–1)
     public int RankIndex { get; private set; }
     public string RankName => cfg.rankNames[RankIndex];
@@ -28,6 +30,7 @@ public class ScoreManager : MonoBehaviour
     // Arayüz bunları dinleyecek
     public event System.Action<string> OnRankUp;       // yeni rütbe adı
     public event System.Action<int> OnPointsGained;    // tek seferde kazanılan puan (kare temizleme)
+    public event System.Action<Vector2, string, bool> OnPopup; // dünya konumu, yazı, iyi mi (yeşil/kırmızı)
 
     float score;      // Saniye puanı küsuratlı biriktiği için float tutuyoruz
     float comboTimer; // Kombonun düşmesine kalan saniye
@@ -77,9 +80,22 @@ public class ScoreManager : MonoBehaviour
         OnPointsGained?.Invoke(Mathf.RoundToInt(points));
 
         if (!IsDiving) return;
-        Combo = Mathf.Min(Combo + (wasCore ? cfg.comboCoreStep : cfg.comboStep), cfg.comboMax);
+        Combo = Mathf.Min(Combo + (wasCore ? cfg.comboCoreStep : cfg.comboStep), ComboMax);
         comboTimer = cfg.comboTimeout;
     }
+
+    // Balık kurtarma bonusu / balık emme cezası gibi tek seferlik puanlar. Skor sıfırın altına inmez.
+    public void AddBonus(int points, Vector2 worldPos, string label)
+    {
+        if (points > 0) AddScore(points);
+        else score = Mathf.Max(0f, score + points);
+        OnPopup?.Invoke(worldPos, $"{(points > 0 ? "+" : "")}{points}  {label}", points > 0);
+    }
+
+    // Puansız bilgi yazısı (ör. "Boru tıkandı!")
+    public void Popup(Vector2 worldPos, string text, bool good) => OnPopup?.Invoke(worldPos, text, good);
+
+    public void CountFishRescued() => FishRescued++;
 
     void ResetCombo()
     {

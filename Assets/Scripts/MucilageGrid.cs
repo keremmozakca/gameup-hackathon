@@ -18,6 +18,7 @@ public class MucilageGrid : MonoBehaviour
     public int W => cfg.width;
     public int H => cfg.height;
     public int InfectedCount { get; private set; }
+    public int CoreCount { get; private set; }
     public float Density => (float)InfectedCount / (W * H);
 
     // Bir kare temizlenince haber verir (kare, çekirdek miydi?). Skor ve efektler bunu dinleyecek.
@@ -59,7 +60,7 @@ public class MucilageGrid : MonoBehaviour
     // Her karede çalışır: süre dolunca bir yayılma turu yapar
     void Update()
     {
-        spreadTimer += Time.deltaTime;
+        spreadTimer += Time.deltaTime * CrisisManager.SpreadSpeed; // kriz haberleri yayılmayı hızlandırıp yavaşlatabilir
         if (spreadTimer >= SpreadInterval)
         {
             spreadTimer = 0f;
@@ -182,6 +183,7 @@ public class MucilageGrid : MonoBehaviour
         if (IsInfected(c) && !core) return; // zaten müsilajlı, çekirdeğe de dönmüyorsa bir şey yapma
 
         if (!IsInfected(c)) InfectedCount++;
+        if (core && !isCore[c.x, c.y]) CoreCount++;
         hp[c.x, c.y] = core ? cfg.coreHp : cfg.mucilageHp;
         isCore[c.x, c.y] = core;
         tilemap.SetTile((Vector3Int)c, core ? coreTile : mucilageTile);
@@ -201,11 +203,27 @@ public class MucilageGrid : MonoBehaviour
         }
 
         bool wasCore = isCore[c.x, c.y];
+        ClearCell(c);
+        OnCellCleared?.Invoke(c, wasCore);
+    }
+
+    // Kareyi puan vermeden temizler (Damage ve fırtına kullanır)
+    void ClearCell(Vector2Int c)
+    {
+        if (isCore[c.x, c.y]) CoreCount--;
         hp[c.x, c.y] = 0f;
         isCore[c.x, c.y] = false;
         InfectedCount--;
         tilemap.SetTile((Vector3Int)c, null);
-        OnCellCleared?.Invoke(c, wasCore);
+    }
+
+    // Fırtına haberi: normal müsilaj karelerinin bir kısmını dağıtır (çekirdeklere dokunmaz, puan vermez)
+    public void ScatterMucilage(float fraction)
+    {
+        for (int x = 0; x < W; x++)
+            for (int y = 0; y < H; y++)
+                if (hp[x, y] > 0f && !isCore[x, y] && Random.value < fraction)
+                    ClearCell(new Vector2Int(x, y));
     }
 
     public bool InBounds(Vector2Int c) => c.x >= 0 && c.x < W && c.y >= 0 && c.y < H;

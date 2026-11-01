@@ -1,13 +1,15 @@
 using UnityEngine;
 
-// Süs balıkları. "FX" objesine ekle.
-// Deniz ne kadar temizse o kadar balık yüzer; müsilaja çarpan balık geri döner.
-// Oyuncuya "temizledikçe deniz canlanıyor" hissini verir.
+// Balıklar. "FX" objesine ekle.
+// Deniz ne kadar temizse o kadar balık yüzer. Müsilaja giren balık yapışıp kalır:
+// etrafını temizleyip kurtarırsan bonus puan, geç kalırsan boğulur.
+// Emme konisi bir balığa fishSuckPenaltyTime'dan uzun değerse ceza gelir ve balık kaçar.
 public class FishManager : MonoBehaviour
 {
     [Header("Bağlantılar")]
     public GameConfig cfg;
     public MucilageGrid grid;
+    public SuctionTool suction;
     [Tooltip("Gövde sprite'ı (daire)")]
     public Sprite bodySprite;
     [Tooltip("Kuyruk sprite'ı (kare)")]
@@ -17,14 +19,22 @@ public class FishManager : MonoBehaviour
     const int MaxFish = 10;
     const float SpawnInterval = 1.2f;
     static readonly Color FishColor = new Color32(0x7F, 0xD6, 0xE8, 0xFF); // sığ sudan biraz açık
+    static readonly Color StuckColor = new Color32(0x8A, 0x86, 0x78, 0xFF); // müsilaja bulanmış
+
+    enum FishState { Swim, Stuck, Flee }
 
     class Fish
     {
         public Transform t;
+        public SpriteRenderer[] parts;
+        public FishState state;
         public float speed;
-        public float dir;   // +1 sağa, -1 sola
+        public float dir;        // +1 sağa, -1 sola
         public float baseY;
-        public float phase; // yukarı-aşağı salınım için
+        public float phase;      // yukarı-aşağı salınım için
+        public float suckTimer;  // emme konisinde geçen süre
+        public float stuckTimer; // sıkışık geçen süre
+        public bool Alive => t.gameObject.activeSelf;
     }
 
     Fish[] fish;
@@ -33,11 +43,11 @@ public class FishManager : MonoBehaviour
     void Awake()
     {
         fish = new Fish[MaxFish];
-        for (int i = 0; i < MaxFish; i++) fish[i] = new Fish { t = BuildFish() };
+        for (int i = 0; i < MaxFish; i++) fish[i] = BuildFish();
     }
 
     // Balık = basık daire gövde + 45° döndürülmüş kare kuyruk
-    Transform BuildFish()
+    Fish BuildFish()
     {
         GameObject root = new GameObject("Fish");
         root.transform.SetParent(transform, false);
@@ -54,15 +64,15 @@ public class FishManager : MonoBehaviour
         tail.transform.localScale = new Vector3(0.2f, 0.2f, 1f);
         tail.sprite = tailSprite;
 
-        foreach (SpriteRenderer sr in new[] { body, tail })
+        SpriteRenderer[] parts = { body, tail };
+        foreach (SpriteRenderer sr in parts)
         {
             if (material) sr.sharedMaterial = material;
-            sr.color = FishColor;
-            sr.sortingOrder = -1; // müsilajın (0) arkasında kalsın
+            sr.sortingOrder = 1; // sıkışınca müsilajın (0) önünde görünsün
         }
 
         root.SetActive(false);
-        return root.transform;
+        return new Fish { t = root.transform, parts = parts };
     }
 
     void Update()
@@ -72,7 +82,7 @@ public class FishManager : MonoBehaviour
         int target = Mathf.RoundToInt(MaxFish * clean * clean);
 
         int alive = 0;
-        foreach (Fish f in fish) if (f.t.gameObject.activeSelf) alive++;
+        foreach (Fish f in fish) if (f.Alive) alive++;
 
         spawnTimer -= Time.deltaTime;
         if (alive < target && spawnTimer <= 0f)
@@ -82,12 +92,16 @@ public class FishManager : MonoBehaviour
         }
 
         foreach (Fish f in fish)
-            if (f.t.gameObject.activeSelf) Swim(f);
+        {
+            if (!f.Alive) continue;
+            if (f.state == FishState.Stuck) UpdateStuck(f);
+            else Swim(f);
+        }
     }
 
     void TrySpawn()
     {
-        Fish f = System.Array.Find(fish, x => !x.t.gameObject.activeSelf);
+        Fish f = System.Array.Find(fish, x => !x.Alive);
         if (f == null) return;
 
         // Rastgele bir kenardan, temiz bir satırda doğar
@@ -96,34 +110,103 @@ public class FishManager : MonoBehaviour
         int edgeX = f.dir > 0 ? 0 : grid.W - 1;
         if (grid.IsInfected(new Vector2Int(edgeX, row))) return;
 
+        f.state = FishState.Swim;
         f.speed = Random.Range(1.2f, 2.5f);
         f.baseY = row + 0.5f;
         f.phase = Random.value * 10f;
+        f.suckTimer = 0f;
         f.t.position = new Vector3(f.dir > 0 ? -0.5f : grid.W + 0.5f, f.baseY, 0f);
         f.t.localScale = new Vector3(f.dir, 1f, 1f);
+        SetColor(f, FishColor);
         f.t.gameObject.SetActive(true);
     }
 
     void Swim(Fish f)
     {
         Vector3 p = f.t.position;
-        p.x += f.dir * f.speed * Time.deltaTime;
-        f.phase += Time.deltaTime * 3f;
+        float speed = f.state == FishState.Flee ? 6f : f.speed;
+        p.x += f.dir * speed * Time.deltaTime;
+        f.phase += Time.deltaTime * (f.state == FishState.Flee ? 10f : 3f);
         p.y = f.baseY + Mathf.Sin(f.phase) * 0.2f;
-
-        // Önündeki kare müsilajlıysa geri dön
-        Vector2Int ahead = new Vector2Int(Mathf.FloorToInt(p.x + f.dir * 0.5f), Mathf.FloorToInt(p.y));
-        if (grid.IsInfected(ahead))
-        {
-            f.dir = -f.dir;
-            f.t.localScale = new Vector3(f.dir, 1f, 1f);
-        }
-
         f.t.position = p;
 
-        // Ekrandan çıktıysa veya müsilajın içinde kaldıysa kaybolur
-        bool outside = p.x < -1f || p.x > grid.W + 1f;
-        bool stuck = grid.IsInfected(new Vector2Int(Mathf.FloorToInt(p.x), Mathf.FloorToInt(p.y)));
-        if (outside || stuck) f.t.gameObject.SetActive(false);
+        if (p.x < -1f || p.x > grid.W + 1f)
+        {
+            f.t.gameObject.SetActive(false);
+            return;
+        }
+
+        // Kaçan balık müsilaja takılmaz ve tekrar ceza vermez
+        if (f.state == FishState.Flee) return;
+
+        // Müsilaja girdi: yapışıp kalır
+        if (grid.IsInfected(Cell(p)))
+        {
+            f.state = FishState.Stuck;
+            f.stuckTimer = 0f;
+            SetColor(f, StuckColor);
+            return;
+        }
+
+        // Emme konisinde fazla kaldı: ceza ve kaçış
+        if (suction.IsSucking && suction.InCone(p))
+        {
+            f.suckTimer += Time.deltaTime;
+            if (f.suckTimer >= cfg.fishSuckPenaltyTime)
+            {
+                ScoreManager.I.AddBonus(-cfg.fishSuckPenalty, p, "Balığa dikkat!");
+                Flee(f, p.x >= suction.transform.position.x ? 1f : -1f);
+            }
+        }
+        else
+        {
+            f.suckTimer = 0f;
+        }
+    }
+
+    void UpdateStuck(Fish f)
+    {
+        Vector3 p = f.t.position;
+
+        // Bulunduğu kare temizlendi: kurtarıldı!
+        if (!grid.IsInfected(Cell(p)))
+        {
+            ScoreManager.I.AddBonus(cfg.fishRescueScore, p, "Balık kurtarıldı!");
+            ScoreManager.I.CountFishRescued();
+            Flee(f, f.dir);
+            return;
+        }
+
+        // Çırpınma: yerinde titrer ve giderek solar
+        f.stuckTimer += Time.deltaTime;
+        float k = f.stuckTimer / cfg.fishDrownTime;
+        f.t.rotation = Quaternion.Euler(0, 0, Mathf.Sin(Time.time * 20f) * 15f * (1f - k));
+        Color c = StuckColor;
+        c.a = 1f - k * 0.7f;
+        SetColor(f, c);
+
+        if (f.stuckTimer >= cfg.fishDrownTime)
+        {
+            ScoreManager.I.Popup(p, "Bir balık boğuldu", false);
+            f.t.rotation = Quaternion.identity;
+            f.t.gameObject.SetActive(false);
+        }
+    }
+
+    void Flee(Fish f, float dir)
+    {
+        f.state = FishState.Flee;
+        f.dir = dir;
+        f.baseY = f.t.position.y;
+        f.t.rotation = Quaternion.identity;
+        f.t.localScale = new Vector3(dir, 1f, 1f);
+        SetColor(f, FishColor);
+    }
+
+    static Vector2Int Cell(Vector3 p) => new Vector2Int(Mathf.FloorToInt(p.x), Mathf.FloorToInt(p.y));
+
+    static void SetColor(Fish f, Color c)
+    {
+        foreach (SpriteRenderer sr in f.parts) sr.color = c;
     }
 }

@@ -799,6 +799,7 @@ MonoBehaviour:
   cfg: {fileID: 11400000, guid: 4930cfa1688079a478ed8b616e5f992d, type: 2}
   grid: {fileID: 671075126}
   fx: {fileID: 830527919}
+  player: {fileID: 1262255890}
   sprite: {fileID: 7482667652216324306, guid: f1f9ab4e1f7fb68459e68d12baf51753, type: 3}
   material: {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
 --- !u!114 &830527922
@@ -815,6 +816,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FishManager
   cfg: {fileID: 11400000, guid: 4930cfa1688079a478ed8b616e5f992d, type: 2}
   grid: {fileID: 671075126}
+  suction: {fileID: 1262255889}
   bodySprite: {fileID: -2413806693520163455, guid: a86470a33a6bf42c4b3595704624658b, type: 3}
   tailSprite: {fileID: 7482667652216324306, guid: f1f9ab4e1f7fb68459e68d12baf51753, type: 3}
   material: {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
@@ -996,6 +998,7 @@ GameObject:
   - component: {fileID: 1426543211}
   - component: {fileID: 1426543210}
   - component: {fileID: 1426543212}
+  - component: {fileID: 1426543213}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -1047,6 +1050,20 @@ MonoBehaviour:
   cfg: {fileID: 11400000, guid: 4930cfa1688079a478ed8b616e5f992d, type: 2}
   grid: {fileID: 671075126}
   breath: {fileID: 1262255892}
+--- !u!114 &1426543213
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1426543209}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0218004f2c0dfa4b9b58773b77b44ce, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CrisisManager
+  cfg: {fileID: 11400000, guid: 4930cfa1688079a478ed8b616e5f992d, type: 2}
+  grid: {fileID: 671075126}
 --- !u!1 &2097696242
 GameObject:
   m_ObjectHideFlags: 0

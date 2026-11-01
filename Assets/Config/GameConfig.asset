@@ -31,7 +31,7 @@ MonoBehaviour:
   breathRefillTime: 2.5
   faintDuration: 4
   boatPosition: {x: 16, y: 13.5}
-  stageDuration: 50
+  stageDuration: 40
   startTemperature: 22
   temperaturePerStage: 1
   stageSpreadMultiplier: 0.85

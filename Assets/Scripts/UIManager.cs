@@ -24,7 +24,11 @@ public class UIManager : MonoBehaviour
     static readonly Color BarBg = new Color(0f, 0f, 0f, 0.5f);
 
     const float ThermoStages = 8f;    // Termometre kaç aşamada tamamen dolar (sadece görsel)
-    const float RankToastTime = 2.5f; // Rütbe bildiriminin ekranda kalma süresi
+    const float RankToastTime = 4f;   // Rütbe bildiriminin ekranda kalma süresi
+    const int PopupCount = 12;        // Aynı anda ekranda olabilecek uçan puan yazısı
+    const float PopupTime = 1.4f;
+    static readonly Color Good = new Color32(0x7C, 0xF0, 0x9A, 0xFF);   // iyi haber / bonus
+    static readonly Color Bad = new Color32(0xE8, 0x4A, 0x3A, 0xFF);    // kötü haber / ceza
     const float VignetteStart = 0.7f;   // Yoğunluk bu orana gelince ekran kenarları kararmaya başlar
 
     // Giriş ekranı: oyun ilk açıldığında menüden önce sırayla beliren satırlar
@@ -39,6 +43,8 @@ public class UIManager : MonoBehaviour
 
     // Giriş ekranı açıkken GameManager menü tuşlarını dinlemez
     public static bool IntroOpen { get; private set; }
+    static bool ranksOpen;
+    public static bool MenuBlocked => IntroOpen || ranksOpen; // GameManager menüde SPACE'i dinlemesin
     static bool introDone; // Sahne yeniden yüklense de giriş bir kez gösterilir
 
     const string InfoText =
@@ -63,6 +69,19 @@ public class UIManager : MonoBehaviour
     TMP_Text densityText;
     TMP_Text rankToast;
     Image vignette;
+    TMP_Text rankLine;
+    TMP_Text pipePrompt;
+    GameObject crisisBox;
+    Image crisisBg;
+    Image crisisFill;
+    TMP_Text crisisText;
+    float crisisFlash;
+    TMP_Text[] popups;
+    float[] popupTimers;
+    Vector3[] popupWorld;
+    int popupNext;
+    GameObject ranksPanel;
+    SewagePipe pipe;
     float rankToastTimer;
 
     // Ekranlar
@@ -84,6 +103,7 @@ public class UIManager : MonoBehaviour
         BuildHud();
         BuildMenu();
         BuildGameOver();
+        BuildRanks();
         BuildIntro();
     }
 
@@ -91,13 +111,21 @@ public class UIManager : MonoBehaviour
     {
         GameManager.I.OnStateChanged += HandleState;
         ScoreManager.I.OnRankUp += ShowRankToast;
+        ScoreManager.I.OnPopup += ShowPopup;
+        CrisisManager.I.OnCrisisStarted += FlashCrisis;
+        pipe = FindFirstObjectByType<SewagePipe>();
         HandleState(GameManager.I.CurrentState);
     }
 
     void OnDestroy()
     {
         if (GameManager.I) GameManager.I.OnStateChanged -= HandleState;
-        if (ScoreManager.I) ScoreManager.I.OnRankUp -= ShowRankToast;
+        if (ScoreManager.I)
+        {
+            ScoreManager.I.OnRankUp -= ShowRankToast;
+            ScoreManager.I.OnPopup -= ShowPopup;
+        }
+        if (CrisisManager.I) CrisisManager.I.OnCrisisStarted -= FlashCrisis;
     }
 
     void HandleState(GameManager.State s)
@@ -107,6 +135,8 @@ public class UIManager : MonoBehaviour
         gameOverPanel.SetActive(s == GameManager.State.GameOver);
 
         if (s == GameManager.State.Menu) FillMenuBest();
+        ranksOpen = false;
+        ranksPanel.SetActive(false);
         IntroOpen = s == GameManager.State.Menu && !introDone;
         introPanel.SetActive(IntroOpen);
         // ScoreManager da aynı olayda skoru kaydediyor; sıra belirsiz olduğu için doldurmayı bu karenin sonuna bırakıyoruz
@@ -162,6 +192,13 @@ public class UIManager : MonoBehaviour
         vc.a = v * (0.75f + 0.25f * Mathf.Sin(Time.time * 4f));
         vignette.color = vc;
 
+        // Rütbe satırı: rütbeyi ve sıradakine kalan puanı hep gösterir
+        rankLine.text = sm.IsMaxRank ? $"{sm.RankName}  ·  en yüksek rütbe" : $"{sm.RankName}  ·  sonraki rütbeye {sm.PointsToNextRank:N0}";
+
+        UpdateCrisis();
+        UpdatePopups();
+        UpdatePipePrompt();
+
         // Rütbe bildirimi: yavaşça kaybolur
         if (rankToastTimer > 0f)
         {
@@ -172,9 +209,72 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    void UpdateCrisis()
+    {
+        CrisisManager cm = CrisisManager.I;
+        crisisBox.SetActive(cm.Active);
+        if (!cm.Active) return;
+
+        crisisText.text = $"<b>{(cm.IsGood ? "İYİ HABER" : "SON DAKİKA")}</b>  {cm.Headline}\n<size=75%>{cm.Effect}</size>";
+        crisisFill.fillAmount = cm.Remaining01;
+        Color c = cm.IsGood ? Good : Bad;
+        crisisFill.color = c;
+        crisisFlash = Mathf.Max(0f, crisisFlash - Time.deltaTime);
+        crisisBg.color = Color.Lerp(new Color(0.02f, 0.1f, 0.14f, 0.85f), c, crisisFlash); // yeni haberde parlar
+    }
+
+    void FlashCrisis() => crisisFlash = 1f;
+
+    void ShowPopup(Vector2 worldPos, string text, bool good)
+    {
+        int i = popupNext;
+        popupNext = (popupNext + 1) % PopupCount;
+        popups[i].text = text;
+        popups[i].color = good ? Good : Bad;
+        popupWorld[i] = worldPos;
+        popupTimers[i] = PopupTime;
+        popups[i].gameObject.SetActive(true);
+    }
+
+    // Uçan yazılar: dünyadaki noktadan yukarı süzülüp kaybolur
+    void UpdatePopups()
+    {
+        for (int i = 0; i < PopupCount; i++)
+        {
+            if (popupTimers[i] <= 0f) continue;
+            popupTimers[i] -= Time.deltaTime;
+            if (popupTimers[i] <= 0f)
+            {
+                popups[i].gameObject.SetActive(false);
+                continue;
+            }
+            popupWorld[i] += Vector3.up * Time.deltaTime * 0.8f;
+            popups[i].rectTransform.position = cam.WorldToScreenPoint(popupWorld[i]);
+            Color c = popups[i].color;
+            c.a = Mathf.Clamp01(popupTimers[i] / 0.4f);
+            popups[i].color = c;
+        }
+    }
+
+    // Borunun üstünde: tıkama ipucu ve ilerlemesi
+    void UpdatePipePrompt()
+    {
+        bool show = pipe && pipe.IsOpen;
+        pipePrompt.gameObject.SetActive(show);
+        if (!show) return;
+
+        pipePrompt.rectTransform.position = cam.WorldToScreenPoint(pipe.Mouth + new Vector2(1.2f, 1.1f));
+        if (pipe.Plugged) pipePrompt.text = $"<color=#7CF09A>Tıkalı: {pipe.PlugRemaining:0} sn</color>";
+        else if (CrisisManager.PipeStopped) pipePrompt.text = "<color=#7CF09A>Arıtma tesisi devrede</color>";
+        else if (pipe.PlayerNear) pipePrompt.text = pipe.PlugHold01 > 0f ? $"Tıkanıyor… %{pipe.PlugHold01 * 100f:0}" : "<b>E</b> basılı tut: boruyu tıka";
+        else pipePrompt.text = "<size=80%>Atık su borusu</size>";
+    }
+
     void ShowRankToast(string rank)
     {
-        rankToast.text = $"Yeni rütbe: {rank}";
+        int idx = ScoreManager.I.RankIndex;
+        rankToast.text = $"Yeni rütbe: {rank}\n<size=60%><color=#FFFFFF>Avantaj: {cfg.rankPerks[idx]}</color></size>\n" +
+                         $"<size=45%><color=#E84A3A>Marmara karşılık verdi: +{cfg.coresOnRankUp} çekirdek</color></size>";
         rankToastTimer = RankToastTime;
     }
 
@@ -195,7 +295,7 @@ public class UIManager : MonoBehaviour
         gameOverStats.text =
             $"Skor: {sm.Score:N0}{(sm.IsNewBest ? "   — YENİ REKOR!" : "")}\n" +
             $"Rütbe: {sm.RankName}\n{next}\n" +
-            $"Dayandığın süre: {GameManager.I.ElapsedTime:0} sn   Ulaşılan sıcaklık: {GameManager.I.Temperature:0} °C\n\n" +
+            $"Dayandığın süre: {GameManager.I.ElapsedTime:0} sn   En yüksek sıcaklık: {GameManager.I.MaxTemperature:0} °C   Kurtarılan balık: {sm.FishRescued}\n\n" +
             $"En iyi skorlar\n{list}";
     }
 
@@ -270,7 +370,42 @@ public class UIManager : MonoBehaviour
 
         // Rütbe bildirimi (ekran ortası, üstte)
         rankToast = MakeText("RankToast", h, "", 48, TextAnchor.MiddleCenter, new Color(Accent.r, Accent.g, Accent.b, 0f));
-        SetRect(rankToast.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, 200), new Vector2(1200, 80));
+        SetRect(rankToast.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, 170), new Vector2(1400, 220));
+
+        // Skorun altında rütbe satırı
+        rankLine = MakeText("RankLine", h, "", 24, TextAnchor.UpperCenter, new Color(1, 1, 1, 0.75f));
+        SetRect(rankLine.rectTransform, new Vector2(0.5f, 1), new Vector2(0, -155), new Vector2(800, 34));
+
+        // Kriz haberi bandı (üst orta, rütbe satırının altında)
+        RectTransform cb = MakeRect("Crisis", h, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -195), new Vector2(1100, 86));
+        cb.pivot = new Vector2(0.5f, 1);
+        crisisBox = cb.gameObject;
+        crisisBg = MakeImage("Bg", cb, new Color(0.02f, 0.1f, 0.14f, 0.85f));
+        crisisText = MakeText("Text", cb, "", 28, TextAnchor.MiddleCenter, Color.white);
+        crisisText.rectTransform.anchorMin = Vector2.zero;
+        crisisText.rectTransform.anchorMax = Vector2.one;
+        crisisText.rectTransform.sizeDelta = new Vector2(-30, -12);
+        RectTransform cbar = MakeRect("Timer", cb, new Vector2(0, 0), new Vector2(1, 0), Vector2.zero, new Vector2(0, 6));
+        cbar.pivot = new Vector2(0.5f, 0);
+        crisisFill = MakeImage("Fill", cbar, Bad);
+        MakeFill(crisisFill, Image.FillMethod.Horizontal);
+        crisisBox.SetActive(false);
+
+        // Boru ipucu (borunun üstünü takip eder)
+        pipePrompt = MakeText("PipePrompt", h, "", 24, TextAnchor.MiddleCenter, Color.white);
+        pipePrompt.rectTransform.sizeDelta = new Vector2(420, 40);
+
+        // Uçan puan yazıları havuzu
+        popups = new TMP_Text[PopupCount];
+        popupTimers = new float[PopupCount];
+        popupWorld = new Vector3[PopupCount];
+        for (int i = 0; i < PopupCount; i++)
+        {
+            popups[i] = MakeText("Popup", h, "", 26, TextAnchor.MiddleCenter, Good);
+            popups[i].rectTransform.sizeDelta = new Vector2(500, 40);
+            popups[i].fontStyle = FontStyles.Bold;
+            popups[i].gameObject.SetActive(false);
+        }
         rankToast.fontStyle = FontStyles.Bold;
     }
 
@@ -286,17 +421,54 @@ public class UIManager : MonoBehaviour
         SetRect(tag.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, 170), new Vector2(1600, 60));
 
         TMP_Text how = MakeText("HowTo", p,
-            "WASD: Yüz      Sol tık (basılı): Müsilajı em\n" +
-            "Nefesin azalınca yüzeye çık — ama yüzey müsilajla kaplıysa nefes alamazsın.\n" +
-            "Derindeki koyu çekirdekler müsilajı besler: önce onları temizle.\n" +
-            "Müsilaj denizin %85'ini kaplarsa oyun biter.",
+            "WASD: Yüz      Sol tık (basılı): Müsilajı em      E (basılı): Atık su borusunu tıka\n" +
+            "Yüzey müsilajla kaplıysa nefes alamazsın. Su altında kaldıkça kombo büyür.\n" +
+            "Koyu çekirdekler müsilajı besler. Sıkışan balıkları kurtar, ama onları emme!\n" +
+            "Dünyadan gelen haberlere kulak ver. Müsilaj %85'i kaplarsa oyun biter.",
             30, TextAnchor.MiddleCenter, Color.white);
         SetRect(how.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, 10), new Vector2(1500, 220));
 
-        MakeButton(p, "Dal  (SPACE)", new Vector2(0, -170), () => GameManager.I.StartGame());
+        MakeButton(p, "Dal  (SPACE)", new Vector2(-230, -170), () => GameManager.I.StartGame());
+        MakeButton(p, "Rütbeler", new Vector2(230, -170), () => { ranksOpen = true; ranksPanel.SetActive(true); });
 
         menuBest = MakeText("Best", p, "", 28, TextAnchor.MiddleCenter, new Color(1, 1, 1, 0.7f));
-        SetRect(menuBest.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, -260), new Vector2(800, 40));
+        SetRect(menuBest.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, -270), new Vector2(800, 40));
+    }
+
+    // Rütbeler ekranı: her rütbenin puanı ve verdiği avantaj
+    void BuildRanks()
+    {
+        RectTransform p = MakePanel("Ranks");
+        p.GetComponent<Image>().color = new Color(0.01f, 0.08f, 0.11f, 0.98f);
+        ranksPanel = p.gameObject;
+
+        TMP_Text title = MakeText("Title", p, "RÜTBELER", 72, TextAnchor.MiddleCenter, Color.white);
+        SetRect(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, 380), new Vector2(1200, 100));
+
+        TMP_Text sub = MakeText("Sub", p,
+            "Puan topladıkça rütben yükselir ve her rütbe kalıcı bir avantaj verir.\n" +
+            "Ama Marmara da her yükselişte karşılık verir: yeni çekirdekler doğar.",
+            28, TextAnchor.MiddleCenter, Mucilage);
+        SetRect(sub.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, 290), new Vector2(1500, 90));
+
+        for (int i = 0; i < cfg.rankNames.Length; i++)
+        {
+            RectTransform row = MakeRect("Rank" + i, p, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 180 - i * 105), new Vector2(1300, 90));
+            MakeImage("Bg", row, new Color(1, 1, 1, i % 2 == 0 ? 0.06f : 0.03f));
+
+            TMP_Text name = MakeText("Name", row, $"<b>{cfg.rankNames[i]}</b>", 36, TextAnchor.MiddleLeft, i == 0 ? Color.white : Accent);
+            SetRect(name.rectTransform, new Vector2(0, 0.5f), new Vector2(30, 14), new Vector2(480, 50));
+            name.alignment = TextAlignmentOptions.Left;
+            TMP_Text pts = MakeText("Points", row, $"{cfg.rankThresholds[i]:N0} puan", 24, TextAnchor.MiddleLeft, new Color(1, 1, 1, 0.6f));
+            SetRect(pts.rectTransform, new Vector2(0, 0.5f), new Vector2(30, -24), new Vector2(480, 36));
+            pts.alignment = TextAlignmentOptions.Left;
+            TMP_Text perk = MakeText("Perk", row, cfg.rankPerks[i], 30, TextAnchor.MiddleLeft, Color.white);
+            SetRect(perk.rectTransform, new Vector2(0, 0.5f), new Vector2(520, 0), new Vector2(760, 80));
+            perk.alignment = TextAlignmentOptions.Left;
+        }
+
+        MakeButton(p, "Geri", new Vector2(0, -400), () => { ranksOpen = false; ranksPanel.SetActive(false); });
+        ranksPanel.SetActive(false);
     }
 
     void UpdateIntro()

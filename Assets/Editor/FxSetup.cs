@@ -4,6 +4,7 @@ using UnityEngine;
 
 // Menü: Marmara > Efekt ve Sesleri Kur
 // Sahnede "FX" objesi oluşturur (yoksa), FxManager, SoundManager, FishManager ve SewagePipe ekler, bağlantıları doldurur.
+// GameManager objesine de CrisisManager (kriz haberleri) ekler.
 public static class FxSetup
 {
     [MenuItem("Marmara/Efekt ve Sesleri Kur")]
@@ -44,6 +45,7 @@ public static class FxSetup
         if (!fish) fish = Undo.AddComponent<FishManager>(go);
         fish.cfg = cfg;
         fish.grid = grid;
+        fish.suction = suction;
         fish.bodySprite = psr ? psr.sprite : grid.squareSprite; // dalgıcın daire sprite'ı
         fish.tailSprite = grid.squareSprite;
         fish.material = fx.material;
@@ -53,12 +55,24 @@ public static class FxSetup
         pipe.cfg = cfg;
         pipe.grid = grid;
         pipe.fx = fx;
+        pipe.player = breath.GetComponent<PlayerController>();
         pipe.sprite = grid.squareSprite;
         pipe.material = fx.material;
 
         EditorUtility.SetDirty(fx);
         EditorUtility.SetDirty(sm);
         EditorUtility.SetDirty(fish);
+
+        // Kriz haberleri GameManager objesinde durur
+        GameManager gm = Object.FindFirstObjectByType<GameManager>();
+        if (gm)
+        {
+            CrisisManager crisis = gm.GetComponent<CrisisManager>();
+            if (!crisis) crisis = Undo.AddComponent<CrisisManager>(gm.gameObject);
+            crisis.cfg = cfg;
+            crisis.grid = grid;
+            EditorUtility.SetDirty(crisis);
+        }
         EditorUtility.SetDirty(pipe);
         EditorSceneManager.MarkSceneDirty(go.scene);
         Debug.Log("Efekt ve sesler kuruldu. Sahneyi kaydetmeyi unutma (Ctrl+S).");

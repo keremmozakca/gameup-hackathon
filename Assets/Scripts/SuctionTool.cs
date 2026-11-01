@@ -16,6 +16,11 @@ public class SuctionTool : MonoBehaviour
 
     const int ArcSegments = 12; // Koni yayının kaç parçayla çizileceği
 
+    // Rütbe avantajları (Serbest Dalgıç menzil, Marmara Bekçisi güç) ve kriz haberleri (gönüllüler)
+    public float Range => cfg.suctionRange + (Rank >= 2 ? cfg.perkRangeBonus : 0f);
+    public float Power => cfg.suctionPower * (Rank >= 3 ? 1f + cfg.perkPowerBonus : 1f) * CrisisManager.SuctionPower;
+    static int Rank => ScoreManager.I ? ScoreManager.I.RankIndex : 0;
+
     Camera cam;
 
     void Awake()
@@ -47,9 +52,9 @@ public class SuctionTool : MonoBehaviour
     // Menzil içindeki karelere bakar; merkezi koninin içindeyse hasar verir
     void SuckCells(Vector2 origin)
     {
-        float range = cfg.suctionRange;
+        float range = Range;
         float halfAngle = cfg.suctionAngle * 0.5f;
-        float amount = cfg.suctionPower * Time.deltaTime;
+        float amount = Power * Time.deltaTime;
 
         int minX = Mathf.FloorToInt(origin.x - range);
         int maxX = Mathf.FloorToInt(origin.x + range);
@@ -75,6 +80,13 @@ public class SuctionTool : MonoBehaviour
         }
     }
 
+    // Bir nokta şu an emme konisinin içinde mi? (Balık cezası için)
+    public bool InCone(Vector2 p)
+    {
+        Vector2 to = p - (Vector2)transform.position;
+        return to.magnitude <= Range && Vector2.Angle(AimDir, to) <= cfg.suctionAngle * 0.5f;
+    }
+
     // Geçici koni görseli: merkez → sol kenar → yay → sağ kenar → merkez
     void DrawCone(Vector2 origin)
     {
@@ -82,7 +94,7 @@ public class SuctionTool : MonoBehaviour
         coneLine.enabled = IsSucking;
         if (!IsSucking) return;
 
-        float range = cfg.suctionRange;
+        float range = Range;
         float half = cfg.suctionAngle * 0.5f;
         float baseAngle = Mathf.Atan2(AimDir.y, AimDir.x) * Mathf.Rad2Deg;
 

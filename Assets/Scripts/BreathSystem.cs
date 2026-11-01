@@ -11,7 +11,12 @@ public class BreathSystem : MonoBehaviour
     public MucilageGrid grid;
 
     public float Breath { get; private set; }                 // Kalan nefes (saniye)
-    public float Breath01 => Breath / cfg.breathMax;          // 0–1 arası, nefes barı için
+    public float Breath01 => Breath / BreathMax;              // 0–1 arası, nefes barı için
+
+    // Rütbe avantajları: Kıyı Gönüllüsü ek nefes, Denizin Nefesi hızlı dolum
+    public float BreathMax => cfg.breathMax + (Rank >= 1 ? cfg.perkBreathBonus : 0f);
+    float RefillTime => cfg.breathRefillTime / (Rank >= 4 ? cfg.perkRefillMultiplier : 1f);
+    static int Rank => ScoreManager.I ? ScoreManager.I.RankIndex : 0;
     public bool IsFainted { get; private set; }
     public bool IsRefilling { get; private set; }              // Şu an yüzeyde nefes alıyor mu?
     public bool SurfaceBlocked { get; private set; }           // Yüzeyde ama üstü müsilajla kapalı mı?
@@ -50,14 +55,14 @@ public class BreathSystem : MonoBehaviour
 
         if (refilling)
         {
-            Breath += cfg.breathMax / cfg.breathRefillTime * Time.deltaTime;
+            Breath += BreathMax / RefillTime * Time.deltaTime;
         }
         else
         {
             float mult = player.InMucilage ? cfg.mucilageBreathMultiplier : 1f;
-            Breath -= mult * Time.deltaTime;
+            Breath -= mult * CrisisManager.BreathDrain * Time.deltaTime; // petrol haberi nefesi hızlı bitirir
         }
-        Breath = Mathf.Clamp(Breath, 0f, cfg.breathMax);
+        Breath = Mathf.Clamp(Breath, 0f, BreathMax);
 
         if (Breath <= 0f) Faint();
     }
@@ -80,7 +85,7 @@ public class BreathSystem : MonoBehaviour
     void WakeUp()
     {
         IsFainted = false;
-        Breath = cfg.breathMax;
+        Breath = BreathMax;
         player.CanControl = true;
     }
 }

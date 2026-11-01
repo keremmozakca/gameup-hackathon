@@ -16,7 +16,9 @@ public class GameManager : MonoBehaviour
 
     public State CurrentState { get; private set; }
     public int Stage { get; private set; }             // 0'dan başlar, her aşamada +1
-    public float Temperature => cfg.startTemperature + Stage * cfg.temperaturePerStage;
+    public float Temperature => cfg.startTemperature + Stage * cfg.temperaturePerStage + CrisisManager.TempBonus;
+    public float MaxTemperature { get; private set; }  // Oyun sonu ekranı için
+    public int MinCores => cfg.minCores + Stage;       // Denizde hep en az bu kadar çekirdek olur
     public float ElapsedTime { get; private set; }     // Oyunda geçen süre (hayatta kalma skoru için)
     public float StageProgress01 => stageTimer / cfg.stageDuration;
 
@@ -28,6 +30,7 @@ public class GameManager : MonoBehaviour
     static bool skipMenu;
 
     float stageTimer;
+    float coreRespawnTimer;
 
     void Awake()
     {
@@ -36,6 +39,9 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
+        // Rütbe yükselince Marmara karşılık verir: yeni çekirdekler doğar
+        ScoreManager.I.OnRankUp += _ => { for (int i = 0; i < cfg.coresOnRankUp; i++) grid.SpawnCore(); };
+
         if (skipMenu)
         {
             skipMenu = false;
@@ -52,7 +58,7 @@ public class GameManager : MonoBehaviour
         switch (CurrentState)
         {
             case State.Menu:
-                if (UIManager.IntroOpen) break; // önce giriş ekranı geçilmeli
+                if (UIManager.MenuBlocked) break; // giriş veya rütbeler ekranı açıkken başlama
                 if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return)) StartGame();
                 break;
 
@@ -64,6 +70,8 @@ public class GameManager : MonoBehaviour
                     stageTimer -= cfg.stageDuration;
                     NextStage();
                 }
+                MaxTemperature = Mathf.Max(MaxTemperature, Temperature);
+                KeepCoresAlive();
                 if (grid.Density >= cfg.loseDensity) SetState(State.GameOver);
                 break;
 
@@ -78,7 +86,25 @@ public class GameManager : MonoBehaviour
         ElapsedTime = 0f;
         stageTimer = 0f;
         Stage = 0;
+        MaxTemperature = Temperature;
         SetState(State.Playing);
+    }
+
+    // Bitmeyen baskı: oyuncu çekirdekleri temizledikçe, alt sınırın altına düşünce kısa süre sonra yenisi doğar.
+    // Deniz hiçbir zaman "bitmez"; sadece ne kadar dayandığın önemlidir.
+    void KeepCoresAlive()
+    {
+        if (grid.CoreCount >= MinCores)
+        {
+            coreRespawnTimer = 0f;
+            return;
+        }
+        coreRespawnTimer += Time.deltaTime;
+        if (coreRespawnTimer >= cfg.coreRespawnDelay)
+        {
+            coreRespawnTimer = 0f;
+            grid.SpawnCore();
+        }
     }
 
     // Deniz ısınır: yayılma sıklaşır, yeni çekirdek(ler) doğar
