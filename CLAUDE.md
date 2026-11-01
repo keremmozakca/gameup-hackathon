@@ -29,10 +29,15 @@ Ana fikir: "Deniz nefes alamıyor, sen de alamıyorsun." Hedef oynanış: tur ba
    `OnCellCleared(cell, wasCore)` eventi var. Kurulum menüsü: "Marmara > Emme Aracını Kur" (`Assets/Editor/SuctionSetup.cs`).
 6. `BreathSystem.cs` (Player üzerinde): Breath, Breath01, IsFainted, IsRefilling, SurfaceBlocked; eventler `OnBreathTaken`, `OnFainted`.
    Geçici OnGUI yazısı var. Kurulum menüsü: "Marmara > Nefes Sistemini Kur".
+7. `GameManager.cs` (ayrı obje, `GameManager.I`): State Menu/Playing/GameOver (Menu ve GameOver'da Time.timeScale = 0),
+   Stage, Temperature, ElapsedTime, StageProgress01; eventler `OnStateChanged`, `OnStageChanged`. Yayılma aralığı
+   `grid.SpreadInterval` üzerinden değişir (config'e yazılmaz). Restart sahneyi yeniden yükler, menüyü atlar.
+   Geçici OnGUI var. Kurulum menüsü: "Marmara > GameManager'ı Kur".
 
 Mevcut GameConfig alanları: width, height, startMucilageCells, startCores, spreadInterval, spreadChance, coreSpreadChance, swimForce, mucilageSpeedMultiplier,
 mucilageHp, coreHp, suctionPower, suctionRange, suctionAngle,
-breathMax, mucilageBreathMultiplier, breathRefillTime, faintDuration, boatPosition.
+breathMax, mucilageBreathMultiplier, breathRefillTime, faintDuration, boatPosition,
+stageDuration, startTemperature, temperaturePerStage, stageSpreadMultiplier, coresPerStage, loseDensity.
 
 ## Kalan adımlar (bu sırayla)
 5. **Emme (SuctionTool):** Sol tık basılı → fare yönünde koni (menzil 3, açı 50°). Konideki karelerin hp'si `suctionPower * dt` azalır.

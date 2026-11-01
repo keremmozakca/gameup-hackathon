@@ -23,6 +23,10 @@ public class MucilageGrid : MonoBehaviour
     // Bir kare temizlenince haber verir (kare, çekirdek miydi?). Skor ve efektler bunu dinleyecek.
     public event System.Action<Vector2Int, bool> OnCellCleared;
 
+    // O anki yayılma aralığı. Config'teki değerle başlar, GameManager her aşamada kısaltır.
+    // (Config'i doğrudan değiştirmiyoruz: editörde asset kalıcı olarak bozulurdu.)
+    public float SpreadInterval { get; set; }
+
     Tilemap tilemap;
     float[,] hp;       // Her karenin "canı". 0 = temiz, 0'dan büyük = müsilajlı
     bool[,] isCore;    // Bu kare çekirdek mi?
@@ -44,6 +48,7 @@ public class MucilageGrid : MonoBehaviour
         isCore = new bool[W, H];
         mucilageTile = MakeTile(mucilageColor);
         coreTile = MakeTile(coreColor);
+        SpreadInterval = cfg.spreadInterval;
     }
 
     void Start()
@@ -55,7 +60,7 @@ public class MucilageGrid : MonoBehaviour
     void Update()
     {
         spreadTimer += Time.deltaTime;
-        if (spreadTimer >= cfg.spreadInterval)
+        if (spreadTimer >= SpreadInterval)
         {
             spreadTimer = 0f;
             SpreadTick();

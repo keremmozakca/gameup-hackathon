@@ -70,4 +70,25 @@ public class GameConfig : ScriptableObject
 
     [Tooltip("Bayılınca dalgıcın ışınlandığı tekne konumu")]
     public Vector2 boatPosition = new Vector2(16f, 13.5f);
+
+    // ---------- ADIM 7: OYUN AKIŞI ----------
+    [Header("Sıcaklık Aşamaları")]
+    [Tooltip("Bir sıcaklık aşaması kaç saniye sürer")]
+    public float stageDuration = 50f;
+
+    [Tooltip("Oyun başındaki deniz suyu sıcaklığı (°C)")]
+    public float startTemperature = 22f;
+
+    [Tooltip("Her aşamada sıcaklık kaç derece artar")]
+    public float temperaturePerStage = 1f;
+
+    [Tooltip("Her aşamada yayılma aralığı bununla çarpılır (0.85 = %15 daha sık yayılır)")]
+    [Range(0.1f, 1f)] public float stageSpreadMultiplier = 0.85f;
+
+    [Tooltip("Her aşamada kaç yeni çekirdek doğar")]
+    public int coresPerStage = 1;
+
+    [Header("Oyun Sonu")]
+    [Tooltip("Müsilaj yoğunluğu bu orana ulaşınca oyun biter (0.85 = %85)")]
+    [Range(0f, 1f)] public float loseDensity = 0.85f;
 }

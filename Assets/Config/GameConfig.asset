@@ -15,3 +15,25 @@ MonoBehaviour:
   width: 32
   height: 14
   startMucilageCells: 20
+  startCores: 2
+  spreadInterval: 1.5
+  spreadChance: 0.08
+  coreSpreadChance: 0.5
+  swimForce: 25
+  mucilageSpeedMultiplier: 0.5
+  mucilageHp: 0.3
+  coreHp: 2
+  suctionPower: 1
+  suctionRange: 3
+  suctionAngle: 50
+  breathMax: 12
+  mucilageBreathMultiplier: 1.5
+  breathRefillTime: 2.5
+  faintDuration: 4
+  boatPosition: {x: 16, y: 13.5}
+  stageDuration: 50
+  startTemperature: 22
+  temperaturePerStage: 1
+  stageSpreadMultiplier: 0.85
+  coresPerStage: 1
+  loseDensity: 0.85
