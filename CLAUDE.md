@@ -25,8 +25,11 @@ Ana fikir: "Deniz nefes alamıyor, sen de alamıyorsun." Hedef oynanış: tur ba
 3. Yayılma: `spreadInterval` turları, `spreadChance` / `coreSpreadChance`, yukarı yönlü eğilim (%40).
 4. `Player` (Circle, #FF7A59, Rigidbody2D: Gravity 0, Linear Damping 3, Freeze Rot Z) + `PlayerController.cs`:
    WASD yüzme, müsilajda yavaşlama, sınırlar (SurfaceY = H - 0.5, AtSurface, CurrentCell, CanControl).
+5. `SuctionTool.cs` (Player üzerinde) + koni görseli `SuctionCone` alt objesi (LineRenderer). `MucilageGrid.Damage` ve
+   `OnCellCleared(cell, wasCore)` eventi var. Kurulum menüsü: "Marmara > Emme Aracını Kur" (`Assets/Editor/SuctionSetup.cs`).
 
-Mevcut GameConfig alanları: width, height, startMucilageCells, startCores, spreadInterval, spreadChance, coreSpreadChance, swimForce, mucilageSpeedMultiplier.
+Mevcut GameConfig alanları: width, height, startMucilageCells, startCores, spreadInterval, spreadChance, coreSpreadChance, swimForce, mucilageSpeedMultiplier,
+mucilageHp, coreHp, suctionPower, suctionRange, suctionAngle.
 
 ## Kalan adımlar (bu sırayla)
 5. **Emme (SuctionTool):** Sol tık basılı → fare yönünde koni (menzil 3, açı 50°). Konideki karelerin hp'si `suctionPower * dt` azalır.
