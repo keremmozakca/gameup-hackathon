@@ -409,66 +409,73 @@ public class UIManager : MonoBehaviour
         breathLabel.rectTransform.anchoredPosition = new Vector2(0, 26);
         breathLabel.rectTransform.sizeDelta = new Vector2(300, 30);
 
-        // Sol üst: termometre kutusu (cam tüp + hazne + çentikler + derece)
-        RectTransform tb = MakeBox("ThermoBox", h, new Vector2(0, 1), new Vector2(24, -24), new Vector2(290, 200));
-        RectTransform tube = MakeRect("Tube", tb, new Vector2(0, 1), new Vector2(0, 1), new Vector2(34, -18), new Vector2(30, 128));
-        tube.pivot = new Vector2(0, 1);
+        // Üst şerit: aynı boyda ve hizada üç kutu (sol termometre, orta skor, sağ yoğunluk)
+        Vector2 boxSize = new Vector2(420, 112);
+
+        // Sol: termometre (yatay cam tüp + solda hazne + aşama çentikleri)
+        RectTransform tb = MakeBox("ThermoBox", h, new Vector2(0, 1), new Vector2(16, -14), boxSize);
+        TMP_Text thermoLabel = MakeText("TempLabel", tb, "DENİZ SUYU", 22, TextAnchor.UpperLeft, Mucilage);
+        SetRect(thermoLabel.rectTransform, new Vector2(0, 1), new Vector2(20, -14), new Vector2(220, 30));
+        stageText = MakeText("Stage", tb, "Aşama 1", 22, TextAnchor.UpperLeft, Accent);
+        SetRect(stageText.rectTransform, new Vector2(0, 1), new Vector2(20, -42), new Vector2(260, 30));
+        thermoText = MakeText("Temp", tb, "22 °C", 54, TextAnchor.UpperRight, Color.white);
+        SetRect(thermoText.rectTransform, new Vector2(1, 1), new Vector2(-18, -4), new Vector2(200, 70));
+        thermoText.fontStyle = FontStyles.Bold;
+
+        RectTransform tube = MakeRect("Tube", tb, Vector2.zero, new Vector2(1, 0), Vector2.zero, Vector2.zero);
+        tube.offsetMin = new Vector2(56, 16);
+        tube.offsetMax = new Vector2(-20, 38);
         MakeImage("Glass", tube, Color.white);
         Image tin = MakeImage("Inner", tube, new Color(0.02f, 0.08f, 0.12f, 1f));
-        Inset(tin.rectTransform, 4);
+        Inset(tin.rectTransform, 3);
         thermoFill = MakeImage("Fill", tube, Shallow);
-        Inset(thermoFill.rectTransform, 6);
-        MakeFill(thermoFill, Image.FillMethod.Vertical);
-        RectTransform bulb = MakeRect("Bulb", tb, new Vector2(0, 1), new Vector2(0, 1), new Vector2(49, -160), new Vector2(54, 54));
+        Inset(thermoFill.rectTransform, 5);
+        MakeFill(thermoFill, Image.FillMethod.Horizontal);
+        for (int i = 1; i < ThermoStages; i++) // her aşama için bir çentik
+        {
+            RectTransform tick = MakeRect("Tick", tube, new Vector2(i / ThermoStages, 1), new Vector2(i / ThermoStages, 1), new Vector2(0, 2), new Vector2(3, 8));
+            tick.pivot = new Vector2(0.5f, 0);
+            MakeImage("Line", tick, new Color(1, 1, 1, 0.7f));
+        }
+        RectTransform bulb = MakeRect("Bulb", tb, Vector2.zero, Vector2.zero, new Vector2(38, 27), new Vector2(42, 42));
         Image bulbGlass = bulb.gameObject.AddComponent<Image>();
         bulbGlass.sprite = PixelArt.Disc();
         bulbGlass.raycastTarget = false;
-        RectTransform bulbIn = MakeRect("BulbFill", bulb, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(40, 40));
+        RectTransform bulbIn = MakeRect("BulbFill", bulb, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(30, 30));
         thermoBulb = bulbIn.gameObject.AddComponent<Image>();
         thermoBulb.sprite = PixelArt.Disc();
         thermoBulb.raycastTarget = false;
-        for (int i = 1; i < ThermoStages; i++) // her aşama için bir çentik
-        {
-            RectTransform tick = MakeRect("Tick", tube, new Vector2(1, 0), new Vector2(1, 0), new Vector2(4, 6 + i * (116f / ThermoStages)), new Vector2(10, 3));
-            tick.pivot = new Vector2(0, 0.5f);
-            MakeImage("Line", tick, new Color(1, 1, 1, 0.7f));
-        }
-        thermoText = MakeText("Temp", tb, "22 °C", 64, TextAnchor.UpperLeft, Color.white);
-        SetRect(thermoText.rectTransform, new Vector2(0, 1), new Vector2(100, -14), new Vector2(190, 80));
-        thermoText.fontStyle = FontStyles.Bold;
-        TMP_Text thermoLabel = MakeText("TempLabel", tb, "DENİZ SUYU", 22, TextAnchor.UpperLeft, Mucilage);
-        SetRect(thermoLabel.rectTransform, new Vector2(0, 1), new Vector2(102, -92), new Vector2(190, 30));
-        stageText = MakeText("Stage", tb, "Aşama 1", 24, TextAnchor.UpperLeft, Accent);
-        SetRect(stageText.rectTransform, new Vector2(0, 1), new Vector2(102, -124), new Vector2(190, 60));
 
-        // Orta üst: skor kutusu
-        MakeBox("ScoreBox", h, new Vector2(0.5f, 1), new Vector2(0, -14), new Vector2(460, 140));
-        scoreText = MakeText("Score", h, "0", 64, TextAnchor.UpperCenter, Color.white);
-        SetRect(scoreText.rectTransform, new Vector2(0.5f, 1), new Vector2(0, -22), new Vector2(500, 76));
+        // Orta: skor + kombo + kombo süre barı
+        RectTransform sb = MakeBox("ScoreBox", h, new Vector2(0.5f, 1), new Vector2(0, -14), boxSize);
+        scoreText = MakeText("Score", sb, "0", 60, TextAnchor.UpperCenter, Color.white);
+        SetRect(scoreText.rectTransform, new Vector2(0.5f, 1), new Vector2(0, -2), new Vector2(400, 70));
         scoreText.fontStyle = FontStyles.Bold;
-        comboText = MakeText("Combo", h, "", 30, TextAnchor.UpperCenter, Accent);
-        SetRect(comboText.rectTransform, new Vector2(0.5f, 1), new Vector2(0, -95), new Vector2(500, 40));
-        RectTransform comboBar = MakeRect("ComboBar", h, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -142), new Vector2(160, 6));
+        comboText = MakeText("Combo", sb, "", 24, TextAnchor.UpperCenter, Accent);
+        SetRect(comboText.rectTransform, new Vector2(0.5f, 1), new Vector2(0, -66), new Vector2(400, 30));
+        RectTransform comboBar = MakeRect("ComboBar", sb, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 10), new Vector2(180, 6));
+        comboBar.pivot = new Vector2(0.5f, 0);
         MakeImage("Bg", comboBar, BarBg);
         comboFill = MakeImage("Fill", comboBar, Accent);
         MakeFill(comboFill, Image.FillMethod.Horizontal);
 
-        // Sağ üst: yoğunluk kutusu (etiket, büyük yüzde, sınıra göre dolan bar ve %70 çizgisi)
-        RectTransform db = MakeBox("DensityBox", h, new Vector2(1, 1), new Vector2(-24, -24), new Vector2(330, 140));
-        densityText = MakeText("DensityLabel", db, "MÜSİLAJ YOĞUNLUĞU", 22, TextAnchor.UpperLeft, Mucilage);
-        SetRect(densityText.rectTransform, new Vector2(0, 1), new Vector2(20, -16), new Vector2(300, 30));
-        densityPct = MakeText("DensityPct", db, "%0", 56, TextAnchor.UpperRight, Color.white);
-        SetRect(densityPct.rectTransform, new Vector2(1, 1), new Vector2(-20, -8), new Vector2(200, 70));
+        // Sağ: müsilaj yoğunluğu (etiket, büyük yüzde, sınıra göre dolan bar ve %70 uyarı çizgisi)
+        RectTransform db = MakeBox("DensityBox", h, new Vector2(1, 1), new Vector2(-16, -14), boxSize);
+        densityText = MakeText("DensityLabel", db, "MÜSİLAJ", 22, TextAnchor.UpperLeft, Mucilage);
+        SetRect(densityText.rectTransform, new Vector2(0, 1), new Vector2(20, -14), new Vector2(220, 30));
+        TMP_Text limit = MakeText("Limit", db, "sınır %85", 22, TextAnchor.UpperLeft, new Color(1, 1, 1, 0.6f));
+        SetRect(limit.rectTransform, new Vector2(0, 1), new Vector2(20, -42), new Vector2(220, 30));
+        densityPct = MakeText("DensityPct", db, "%0", 54, TextAnchor.UpperRight, Color.white);
+        SetRect(densityPct.rectTransform, new Vector2(1, 1), new Vector2(-18, -4), new Vector2(200, 70));
         densityPct.fontStyle = FontStyles.Bold;
-        RectTransform dens = MakeRect("Bar", db, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 22), new Vector2(-40, 22));
-        dens.pivot = new Vector2(0.5f, 0);
+        RectTransform dens = MakeRect("Bar", db, Vector2.zero, new Vector2(1, 0), Vector2.zero, Vector2.zero);
+        dens.offsetMin = new Vector2(20, 16);
+        dens.offsetMax = new Vector2(-20, 38);
         MakeImage("Bg", dens, BarBg);
         densityFill = MakeImage("Fill", dens, Mucilage);
         MakeFill(densityFill, Image.FillMethod.Horizontal);
         RectTransform warn = MakeRect("Warn", dens, new Vector2(0.7f / 0.85f, 0), new Vector2(0.7f / 0.85f, 1), Vector2.zero, new Vector2(3, 8));
         MakeImage("Line", warn, Bad);
-        TMP_Text limit = MakeText("Limit", db, "sınır %85", 18, TextAnchor.LowerRight, new Color(1, 1, 1, 0.6f));
-        SetRect(limit.rectTransform, new Vector2(1, 0), new Vector2(-20, 46), new Vector2(200, 24));
 
         // Rütbe bildirimi (ekran ortası, üstte)
         rankToast = MakeText("RankToast", h, "", 48, TextAnchor.MiddleCenter, new Color(Accent.r, Accent.g, Accent.b, 0f));
@@ -476,10 +483,10 @@ public class UIManager : MonoBehaviour
 
         // Skorun altında rütbe satırı
         rankLine = MakeText("RankLine", h, "", 24, TextAnchor.UpperCenter, new Color(1, 1, 1, 0.75f));
-        SetRect(rankLine.rectTransform, new Vector2(0.5f, 1), new Vector2(0, -162), new Vector2(800, 34));
+        SetRect(rankLine.rectTransform, new Vector2(0.5f, 1), new Vector2(0, -134), new Vector2(800, 34));
 
         // Kriz haberi bandı (üst orta, rütbe satırının altında)
-        RectTransform cb = MakeRect("Crisis", h, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -200), new Vector2(1100, 86));
+        RectTransform cb = MakeRect("Crisis", h, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -172), new Vector2(1100, 86));
         cb.pivot = new Vector2(0.5f, 1);
         crisisBox = cb.gameObject;
         crisisBg = MakeImage("Bg", cb, new Color(0.02f, 0.1f, 0.14f, 0.85f));
@@ -541,13 +548,13 @@ public class UIManager : MonoBehaviour
         float copX = 40f;
         if (logoTex)
         {
-            RectTransform lr = MakeRect("Cop31Logo", p, new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -30), new Vector2(150, 150));
+            RectTransform lr = MakeRect("Cop31Logo", p, new Vector2(0, 1), new Vector2(0, 1), new Vector2(30, -24), new Vector2(300, 300));
             lr.pivot = new Vector2(0, 1);
             Image logo = lr.gameObject.AddComponent<Image>();
             logo.sprite = Sprite.Create(logoTex, new Rect(0, 0, logoTex.width, logoTex.height), new Vector2(0.5f, 0.5f));
             logo.preserveAspect = true;
             logo.raycastTarget = false;
-            copX = 210f;
+            copX = 340f;
         }
         TMP_Text cop = MakeText("Cop31", p, "<b>COP31</b>\n<size=75%>Antalya, Türkiye · 2026</size>", 32, TextAnchor.UpperLeft, Color.white);
         SetRect(cop.rectTransform, new Vector2(0, 1), new Vector2(copX, -40), new Vector2(500, 100));
