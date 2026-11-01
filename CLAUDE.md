@@ -41,16 +41,19 @@ Ana fikir: "Deniz nefes alamıyor, sen de alamıyorsun." Hedef oynanış: tur ba
 9. `UIManager.cs` ("UI" objesi): Canvas ve tüm öğeler runtime'da kodla kurulur, yazılar TextMeshPro (Assets/TextMesh Pro içe aktarıldı).
    HUD (nefes barı, termometre, skor + kombo + kombo süre barı, yoğunluk), rütbe bildirimi, ana menü, oyun sonu + bilgi kartı.
    Geçici OnGUI yazıları kaldırıldı. Kurulum menüsü: "Marmara > Arayüzü Kur".
-10. Cila (kısmen): `FxManager.cs` (sprite havuzuyla pop parçacıkları, çekirdekte ekran sarsıntısı), `SoundManager.cs`
+10. Cila (tamamlandı): `FxManager.cs` (sprite havuzuyla pop parçacıkları, çekirdekte ekran sarsıntısı), `SoundManager.cs`
    (tüm sesler kodla üretilir, dosya yok), MucilageGrid'de çekirdek nabzı + emilen karenin solması, UIManager'da %70 üstü vignette.
-   İkisi "FX" objesinde. Kurulum menüsü: "Marmara > Efekt ve Sesleri Kur". Kalan cila: balıklar, atık su borusu, giriş ekranı.
+   `FishManager.cs` (deniz temizlendikçe çoğalan süs balıkları, müsilajdan döner), `SewagePipe.cs` (sol duvarda boru,
+   pipeInterval sn'de bir ağzına müsilaj bırakır). Hepsi "FX" objesinde. Kurulum menüsü: "Marmara > Efekt ve Sesleri Kur".
+   Giriş ekranı UIManager'da (ilk açılışta menüden önce; `UIManager.IntroOpen` açıkken GameManager SPACE'i dinlemez).
    Not: "LiberationSans SDF - Fallback.asset" Play'de dinamik glif ekledikçe değişir; commit'e alma (git checkout ile geri al).
 
 Mevcut GameConfig alanları: width, height, startMucilageCells, startCores, spreadInterval, spreadChance, coreSpreadChance, swimForce, mucilageSpeedMultiplier,
 mucilageHp, coreHp, suctionPower, suctionRange, suctionAngle,
 breathMax, mucilageBreathMultiplier, breathRefillTime, faintDuration, boatPosition,
 stageDuration, startTemperature, temperaturePerStage, stageSpreadMultiplier, coresPerStage, loseDensity,
-scoreMucilage, scoreCore, deepScoreMultiplier, scorePerSecond, comboStep, comboCoreStep, comboTimeout, comboMax, rankNames, rankThresholds.
+scoreMucilage, scoreCore, deepScoreMultiplier, scorePerSecond, comboStep, comboCoreStep, comboTimeout, comboMax, rankNames, rankThresholds,
+pipeInterval, pipeRow.
 
 ## Kalan adımlar (bu sırayla)
 5. **Emme (SuctionTool):** Sol tık basılı → fare yönünde koni (menzil 3, açı 50°). Konideki karelerin hp'si `suctionPower * dt` azalır.

@@ -3,7 +3,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 
 // Menü: Marmara > Efekt ve Sesleri Kur
-// Sahnede "FX" objesi oluşturur (yoksa), FxManager + SoundManager ekler ve bağlantıları doldurur.
+// Sahnede "FX" objesi oluşturur (yoksa), FxManager, SoundManager, FishManager ve SewagePipe ekler, bağlantıları doldurur.
 public static class FxSetup
 {
     [MenuItem("Marmara/Efekt ve Sesleri Kur")]
@@ -38,8 +38,28 @@ public static class FxSetup
         sm.breath = breath;
         sm.suction = suction;
 
+        GameConfig cfg = breath.cfg;
+
+        FishManager fish = go.GetComponent<FishManager>();
+        if (!fish) fish = Undo.AddComponent<FishManager>(go);
+        fish.cfg = cfg;
+        fish.grid = grid;
+        fish.bodySprite = psr ? psr.sprite : grid.squareSprite; // dalgıcın daire sprite'ı
+        fish.tailSprite = grid.squareSprite;
+        fish.material = fx.material;
+
+        SewagePipe pipe = go.GetComponent<SewagePipe>();
+        if (!pipe) pipe = Undo.AddComponent<SewagePipe>(go);
+        pipe.cfg = cfg;
+        pipe.grid = grid;
+        pipe.fx = fx;
+        pipe.sprite = grid.squareSprite;
+        pipe.material = fx.material;
+
         EditorUtility.SetDirty(fx);
         EditorUtility.SetDirty(sm);
+        EditorUtility.SetDirty(fish);
+        EditorUtility.SetDirty(pipe);
         EditorSceneManager.MarkSceneDirty(go.scene);
         Debug.Log("Efekt ve sesler kuruldu. Sahneyi kaydetmeyi unutma (Ctrl+S).");
     }

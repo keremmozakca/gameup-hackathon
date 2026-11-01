@@ -74,7 +74,8 @@ public class FxManager : MonoBehaviour
         if (wasCore) shakeTimer = ShakeTime;
     }
 
-    void Spawn(Vector2 pos, Vector2 vel, Color color, float size)
+    // Tek parçacık saçar. Atık su borusu gibi başka scriptler de kullanır.
+    public void Spawn(Vector2 pos, Vector2 vel, Color color, float size)
     {
         Bit b = bits[next];
         next = (next + 1) % PoolSize;

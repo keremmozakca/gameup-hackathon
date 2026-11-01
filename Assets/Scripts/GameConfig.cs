@@ -119,6 +119,14 @@ public class GameConfig : ScriptableObject
     [Tooltip("Kombo çarpanının üst sınırı")]
     public float comboMax = 3f;
 
+    // ---------- ADIM 10: ATIK SU BORUSU ----------
+    [Header("Atık Su Borusu")]
+    [Tooltip("Boru kaç saniyede bir ağzının önüne müsilaj bırakır")]
+    public float pipeInterval = 5f;
+
+    [Tooltip("Borunun sol duvarda bulunduğu satır (0 = en dip)")]
+    public int pipeRow = 2;
+
     [Header("Rütbeler")]
     [Tooltip("Rütbe adları, küçükten büyüğe")]
     public string[] rankNames = { "Çaylak Dalgıç", "Kıyı Gönüllüsü", "Serbest Dalgıç", "Marmara Bekçisi", "Denizin Nefesi" };

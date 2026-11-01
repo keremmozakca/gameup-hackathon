@@ -27,6 +27,20 @@ public class UIManager : MonoBehaviour
     const float RankToastTime = 2.5f; // Rütbe bildiriminin ekranda kalma süresi
     const float VignetteStart = 0.7f;   // Yoğunluk bu orana gelince ekran kenarları kararmaya başlar
 
+    // Giriş ekranı: oyun ilk açıldığında menüden önce sırayla beliren satırlar
+    static readonly string[] IntroLines =
+    {
+        "2021 baharında Marmara Denizi'nin yüzeyi müsilajla kaplandı.",
+        "Deniz salyası olarak da bilinen bu tabaka ışığı ve oksijeni keser; altındaki canlılar boğulur.",
+        "Isınan su, arıtılmamış atık sular ve durgun deniz onu besler.",
+        "Sen bir gönüllü dalgıçsın. Nefesin yettiğince dal ve temizle.",
+    };
+    const float IntroLineDelay = 1.6f; // Satırların arka arkaya belirme aralığı (sn)
+
+    // Giriş ekranı açıkken GameManager menü tuşlarını dinlemez
+    public static bool IntroOpen { get; private set; }
+    static bool introDone; // Sahne yeniden yüklense de giriş bir kez gösterilir
+
     const string InfoText =
         "Müsilaj; ısınan deniz suyu, arıtılmamış atık sular ve durgun su birleştiğinde çoğalır.\n" +
         "Oyunda yeniden başlayabilirsin. Marmara'da bunun bir tuşu yok.";
@@ -57,6 +71,10 @@ public class UIManager : MonoBehaviour
     TMP_Text gameOverStats;
     TMP_Text menuBest;
     bool gameOverPending;
+    GameObject introPanel;
+    TMP_Text[] introTexts;
+    TMP_Text introHint;
+    float introTime;
 
     void Awake()
     {
@@ -66,6 +84,7 @@ public class UIManager : MonoBehaviour
         BuildHud();
         BuildMenu();
         BuildGameOver();
+        BuildIntro();
     }
 
     void Start()
@@ -88,6 +107,8 @@ public class UIManager : MonoBehaviour
         gameOverPanel.SetActive(s == GameManager.State.GameOver);
 
         if (s == GameManager.State.Menu) FillMenuBest();
+        IntroOpen = s == GameManager.State.Menu && !introDone;
+        introPanel.SetActive(IntroOpen);
         // ScoreManager da aynı olayda skoru kaydediyor; sıra belirsiz olduğu için doldurmayı bu karenin sonuna bırakıyoruz
         if (s == GameManager.State.GameOver) gameOverPending = true;
     }
@@ -95,6 +116,9 @@ public class UIManager : MonoBehaviour
     // LateUpdate, tüm Update'lerden sonra çalışır (zaman durmuşken de)
     void LateUpdate()
     {
+        // Giriş ekranı LateUpdate'te kapanır: aynı tuşa basış GameManager'da oyunu da başlatmasın
+        if (IntroOpen) UpdateIntro();
+
         if (!gameOverPending) return;
         gameOverPending = false;
         FillGameOver();
@@ -273,6 +297,53 @@ public class UIManager : MonoBehaviour
 
         menuBest = MakeText("Best", p, "", 28, TextAnchor.MiddleCenter, new Color(1, 1, 1, 0.7f));
         SetRect(menuBest.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, -260), new Vector2(800, 40));
+    }
+
+    void UpdateIntro()
+    {
+        introTime += Time.unscaledDeltaTime; // menüde zaman durduğu için ölçeksiz zaman
+
+        for (int i = 0; i < introTexts.Length; i++)
+        {
+            Color c = introTexts[i].color;
+            c.a = Mathf.Clamp01(introTime - i * IntroLineDelay);
+            introTexts[i].color = c;
+        }
+
+        float allShown = introTexts.Length * IntroLineDelay;
+        Color hc = introHint.color;
+        hc.a = Mathf.Clamp01(introTime - allShown) * (0.6f + 0.4f * Mathf.Sin(introTime * 3f));
+        introHint.color = hc;
+
+        // Bir tuş/tık: önce tüm satırları göster, ikincisinde menüye geç
+        if (!Input.anyKeyDown) return;
+        if (introTime < allShown)
+        {
+            introTime = allShown;
+            return;
+        }
+        introDone = true;
+        IntroOpen = false;
+        introPanel.SetActive(false);
+    }
+
+    void BuildIntro()
+    {
+        RectTransform p = MakePanel("Intro");
+        p.GetComponent<Image>().color = new Color(0.01f, 0.06f, 0.09f, 1f);
+        introPanel = p.gameObject;
+
+        introTexts = new TMP_Text[IntroLines.Length];
+        for (int i = 0; i < IntroLines.Length; i++)
+        {
+            Color c = i == IntroLines.Length - 1 ? Accent : Color.white;
+            c.a = 0f;
+            introTexts[i] = MakeText("Line" + i, p, IntroLines[i], 38, TextAnchor.MiddleCenter, c);
+            SetRect(introTexts[i].rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, 210 - i * 110), new Vector2(1500, 100));
+        }
+
+        introHint = MakeText("Hint", p, "Devam etmek için bir tuşa bas", 28, TextAnchor.MiddleCenter, new Color(1, 1, 1, 0f));
+        SetRect(introHint.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, -360), new Vector2(800, 50));
     }
 
     void BuildGameOver()

@@ -52,6 +52,7 @@ public class GameManager : MonoBehaviour
         switch (CurrentState)
         {
             case State.Menu:
+                if (UIManager.IntroOpen) break; // önce giriş ekranı geçilmeli
                 if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return)) StartGame();
                 break;
 

@@ -729,6 +729,8 @@ GameObject:
   - component: {fileID: 830527920}
   - component: {fileID: 830527919}
   - component: {fileID: 830527918}
+  - component: {fileID: 830527922}
+  - component: {fileID: 830527921}
   m_Layer: 0
   m_Name: FX
   m_TagString: Untagged
@@ -782,6 +784,40 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &830527921
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 830527917}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5bffc29582db1304c80032fc73793ef4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SewagePipe
+  cfg: {fileID: 11400000, guid: 4930cfa1688079a478ed8b616e5f992d, type: 2}
+  grid: {fileID: 671075126}
+  fx: {fileID: 830527919}
+  sprite: {fileID: 7482667652216324306, guid: f1f9ab4e1f7fb68459e68d12baf51753, type: 3}
+  material: {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+--- !u!114 &830527922
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 830527917}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 679e88b699903c844b89eae8cbb0774c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FishManager
+  cfg: {fileID: 11400000, guid: 4930cfa1688079a478ed8b616e5f992d, type: 2}
+  grid: {fileID: 671075126}
+  bodySprite: {fileID: -2413806693520163455, guid: a86470a33a6bf42c4b3595704624658b, type: 3}
+  tailSprite: {fileID: 7482667652216324306, guid: f1f9ab4e1f7fb68459e68d12baf51753, type: 3}
+  material: {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
 --- !u!1 &1262255886
 GameObject:
   m_ObjectHideFlags: 0
