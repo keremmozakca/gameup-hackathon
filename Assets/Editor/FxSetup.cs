@@ -63,6 +63,14 @@ public static class FxSetup
         EditorUtility.SetDirty(sm);
         EditorUtility.SetDirty(fish);
 
+        // Piksel art dünya süslemesi
+        PixelWorld world = go.GetComponent<PixelWorld>();
+        if (!world) world = Undo.AddComponent<PixelWorld>(go);
+        world.cfg = cfg;
+        world.squareSprite = grid.squareSprite;
+        world.material = fx.material;
+        EditorUtility.SetDirty(world);
+
         // Kriz haberleri GameManager objesinde durur
         GameManager gm = Object.FindFirstObjectByType<GameManager>();
         if (gm)

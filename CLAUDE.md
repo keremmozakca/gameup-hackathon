@@ -47,6 +47,15 @@ Ana fikir: "Deniz nefes alamıyor, sen de alamıyorsun." Hedef oynanış: tur ba
    pipeInterval sn'de bir ağzına müsilaj bırakır). Hepsi "FX" objesinde. Kurulum menüsü: "Marmara > Efekt ve Sesleri Kur".
    Giriş ekranı UIManager'da (ilk açılışta menüden önce; `UIManager.IntroOpen` açıkken GameManager SPACE'i dinlemez).
    Not: "LiberationSans SDF - Fallback.asset" Play'de dinamik glif ekledikçe değişir; commit'e alma (git checkout ile geri al).
+11. Yeniden tasarım (GDD + geri bildirim):
+   - `CrisisManager.cs` (GameManager objesinde): rastgele "SON DAKİKA" kriz haberleri (tanker, sıcak hava, sanayi atığı,
+     müsilaj patlaması / iyi: fırtına, gönüllüler, arıtma tesisi). Etkiler statik çarpanlarla (SpreadSpeed, BreathDrain, SuctionPower, PipeRate, PipeStopped, TempBonus).
+   - Bitmeyen baskı: en az minCores + aşama çekirdek (coreRespawnDelay ile yeniden doğar), rütbe yükselince coresOnRankUp çekirdek.
+   - Rütbe avantajları (birikerek): +nefes, +menzil, +emme gücü, hızlı dolum + x4 kombo. Menüde "Rütbeler" ekranı.
+   - Balıklar müsilaja yapışır: kurtarma +150, emme -50 (GDD). Boru: E basılı tut ile tıkama.
+   - Piksel art: `PixelArt.cs` (sprite'lar kodla, satır haritasından), `PixelWorld.cs` (su/gökyüzü degradesi, İstanbul silueti,
+     dalgalar, tekne, deniz tabanı, yosun, ışık huzmesi). Dalgıç ve emme cihazı + kabarcıklar PlayerController/SuctionTool'da.
+   - Giriş: GDD'deki Deniz monoloğu. Esc ile duraklatma.
 
 Mevcut GameConfig alanları: width, height, startMucilageCells, startCores, spreadInterval, spreadChance, coreSpreadChance, swimForce, mucilageSpeedMultiplier,
 mucilageHp, coreHp, suctionPower, suctionRange, suctionAngle,

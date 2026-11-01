@@ -15,6 +15,7 @@ public class GameManager : MonoBehaviour
     public MucilageGrid grid;
 
     public State CurrentState { get; private set; }
+    public bool Paused { get; private set; }           // Esc ile duraklatma (sadece oyun sırasında)
     public int Stage { get; private set; }             // 0'dan başlar, her aşamada +1
     public float Temperature => cfg.startTemperature + Stage * cfg.temperaturePerStage + CrisisManager.TempBonus;
     public float MaxTemperature { get; private set; }  // Oyun sonu ekranı için
@@ -63,6 +64,12 @@ public class GameManager : MonoBehaviour
                 break;
 
             case State.Playing:
+                if (Input.GetKeyDown(KeyCode.Escape))
+                {
+                    Paused = !Paused;
+                    Time.timeScale = Paused ? 0f : 1f;
+                }
+                if (Paused) break;
                 ElapsedTime += Time.deltaTime;
                 stageTimer += Time.deltaTime;
                 if (stageTimer >= cfg.stageDuration)
@@ -126,6 +133,7 @@ public class GameManager : MonoBehaviour
     void SetState(State s)
     {
         CurrentState = s;
+        Paused = false;
         Time.timeScale = s == State.Playing ? 1f : 0f;
         OnStateChanged?.Invoke(s);
     }

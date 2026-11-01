@@ -25,12 +25,24 @@ public class PlayerController : MonoBehaviour
     SpriteRenderer sr;
     Color normalColor;
     Vector2 input;
+    SuctionTool suction;
+    float animTimer;
+    int animFrame;
+    bool facingLeft;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         sr = GetComponent<SpriteRenderer>();
-        if (sr) normalColor = sr.color;
+        suction = GetComponent<SuctionTool>();
+
+        // Piksel art dalgıç (Deniz): düz renkli daire yerine kodla çizilmiş karakter
+        normalColor = Color.white;
+        if (sr)
+        {
+            sr.sprite = PixelArt.Diver(0);
+            sr.color = normalColor;
+        }
     }
 
     // Update: her ekran karesinde. Tuşları okumak için.
@@ -48,8 +60,25 @@ public class PlayerController : MonoBehaviour
 
         InMucilage = grid.IsInfected(CurrentCell);
 
-        // Geçici geri bildirim: müsilajın içindeyken dalgıç koyulaşır
-        if (sr) sr.color = InMucilage ? Color.Lerp(normalColor, Color.black, 0.4f) : normalColor;
+        if (!sr) return;
+
+        // Müsilajın içindeyken dalgıç koyulaşır
+        sr.color = InMucilage ? Color.Lerp(normalColor, Color.black, 0.4f) : normalColor;
+
+        // Yüzme animasyonu: hareket ederken paletler çırpar
+        bool moving = rb.linearVelocity.sqrMagnitude > 0.2f;
+        animTimer += Time.deltaTime * (moving ? 1f : 0.3f);
+        if (animTimer >= 0.18f)
+        {
+            animTimer = 0f;
+            animFrame = 1 - animFrame;
+            sr.sprite = PixelArt.Diver(animFrame);
+        }
+
+        // Yön: emerken nişan yönüne, yoksa yüzdüğü yöne bakar
+        if (suction && suction.IsSucking) facingLeft = suction.AimDir.x < 0f;
+        else if (Mathf.Abs(input.x) > 0.1f) facingLeft = input.x < 0f;
+        sr.flipX = facingLeft;
     }
 
     // FixedUpdate: sabit aralıklarla, fizik için. Kuvvet uygulamak burada yapılır.

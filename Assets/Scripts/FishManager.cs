@@ -18,7 +18,7 @@ public class FishManager : MonoBehaviour
 
     const int MaxFish = 10;
     const float SpawnInterval = 1.2f;
-    static readonly Color FishColor = new Color32(0x7F, 0xD6, 0xE8, 0xFF); // sığ sudan biraz açık
+    static readonly Color FishColor = new Color32(0xF2, 0xC1, 0x4E, 0xFF); // sarı: mavi suda öne çıksın
     static readonly Color StuckColor = new Color32(0x8A, 0x86, 0x78, 0xFF); // müsilaja bulanmış
 
     enum FishState { Swim, Stuck, Flee }
@@ -46,7 +46,7 @@ public class FishManager : MonoBehaviour
         for (int i = 0; i < MaxFish; i++) fish[i] = BuildFish();
     }
 
-    // Balık = basık daire gövde + 45° döndürülmüş kare kuyruk
+    // Balık = kodla çizilmiş piksel art sprite (renkle boyanır)
     Fish BuildFish()
     {
         GameObject root = new GameObject("Fish");
@@ -54,17 +54,9 @@ public class FishManager : MonoBehaviour
 
         SpriteRenderer body = new GameObject("Body").AddComponent<SpriteRenderer>();
         body.transform.SetParent(root.transform, false);
-        body.transform.localScale = new Vector3(0.6f, 0.3f, 1f);
-        body.sprite = bodySprite;
+        body.sprite = PixelArt.Fish();
 
-        SpriteRenderer tail = new GameObject("Tail").AddComponent<SpriteRenderer>();
-        tail.transform.SetParent(root.transform, false);
-        tail.transform.localPosition = new Vector3(-0.32f, 0f, 0f);
-        tail.transform.localRotation = Quaternion.Euler(0, 0, 45f);
-        tail.transform.localScale = new Vector3(0.2f, 0.2f, 1f);
-        tail.sprite = tailSprite;
-
-        SpriteRenderer[] parts = { body, tail };
+        SpriteRenderer[] parts = { body };
         foreach (SpriteRenderer sr in parts)
         {
             if (material) sr.sharedMaterial = material;

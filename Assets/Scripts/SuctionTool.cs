@@ -23,6 +23,13 @@ public class SuctionTool : MonoBehaviour
 
     Camera cam;
 
+    // Piksel art cihaz ve emilen kabarcıklar
+    const int BubbleCount = 24;
+    SpriteRenderer device;
+    SpriteRenderer[] bubbles;
+    float[] bubbleLife;
+    float bubbleSpawn;
+
     void Awake()
     {
         cam = Camera.main;
@@ -31,6 +38,73 @@ public class SuctionTool : MonoBehaviour
             coneLine.positionCount = ArcSegments + 3;
             coneLine.loop = false;
             coneLine.enabled = false;
+            coneLine.startColor = coneLine.endColor = new Color(1f, 1f, 1f, 0.15f); // koni sadece ince bir iz
+        }
+
+        Material mat = GetComponent<SpriteRenderer>() ? GetComponent<SpriteRenderer>().sharedMaterial : null;
+
+        device = new GameObject("Device").AddComponent<SpriteRenderer>();
+        device.transform.SetParent(transform, false);
+        device.sprite = PixelArt.Device();
+        device.sortingOrder = 3;
+        if (mat) device.sharedMaterial = mat;
+
+        // Kabarcıklar dünyada serbest dursun diye ayrı bir köke bağlı
+        Transform root = new GameObject("SuctionBubbles").transform;
+        bubbles = new SpriteRenderer[BubbleCount];
+        bubbleLife = new float[BubbleCount];
+        for (int i = 0; i < BubbleCount; i++)
+        {
+            bubbles[i] = new GameObject("Bubble").AddComponent<SpriteRenderer>();
+            bubbles[i].transform.SetParent(root, false);
+            bubbles[i].sprite = PixelArt.Bubble();
+            bubbles[i].sortingOrder = 3;
+            if (mat) bubbles[i].sharedMaterial = mat;
+            bubbles[i].enabled = false;
+        }
+    }
+
+    Vector2 Nozzle => (Vector2)transform.position + AimDir * 0.75f;
+
+    // Cihaz elde, nişan yönüne döner; sola bakarken ters çevrilir
+    void UpdateDevice()
+    {
+        float angle = Mathf.Atan2(AimDir.y, AimDir.x) * Mathf.Rad2Deg;
+        device.transform.position = (Vector2)transform.position + AimDir * 0.25f;
+        device.transform.rotation = Quaternion.Euler(0, 0, angle);
+        device.flipY = AimDir.x < 0f;
+    }
+
+    // Emerken koninin içinden ağza doğru akan kabarcıklar
+    void UpdateBubbles()
+    {
+        if (IsSucking)
+        {
+            bubbleSpawn -= Time.deltaTime;
+            while (bubbleSpawn <= 0f)
+            {
+                bubbleSpawn += 0.03f;
+                int i = System.Array.FindIndex(bubbleLife, l => l <= 0f);
+                if (i < 0) break;
+                float a = (Mathf.Atan2(AimDir.y, AimDir.x) * Mathf.Rad2Deg + Random.Range(-0.5f, 0.5f) * cfg.suctionAngle) * Mathf.Deg2Rad;
+                bubbles[i].transform.position = (Vector2)transform.position + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * Range * Random.Range(0.5f, 1f);
+                bubbleLife[i] = 1f;
+                bubbles[i].enabled = true;
+            }
+        }
+
+        Vector2 nozzle = Nozzle;
+        for (int i = 0; i < BubbleCount; i++)
+        {
+            if (bubbleLife[i] <= 0f) continue;
+            Transform t = bubbles[i].transform;
+            t.position = Vector2.MoveTowards(t.position, nozzle, Time.deltaTime * 7f);
+            bubbleLife[i] -= Time.deltaTime * 2.5f;
+            if (bubbleLife[i] <= 0f || Vector2.Distance(t.position, nozzle) < 0.1f)
+            {
+                bubbleLife[i] = 0f;
+                bubbles[i].enabled = false;
+            }
         }
     }
 
@@ -47,6 +121,8 @@ public class SuctionTool : MonoBehaviour
 
         if (IsSucking) SuckCells(origin);
         DrawCone(origin);
+        UpdateDevice();
+        UpdateBubbles();
     }
 
     // Menzil içindeki karelere bakar; merkezi koninin içindeyse hasar verir

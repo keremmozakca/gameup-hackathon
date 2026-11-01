@@ -47,8 +47,9 @@ public class MucilageGrid : MonoBehaviour
         tilemap = GetComponent<Tilemap>();
         hp = new float[W, H];
         isCore = new bool[W, H];
-        mucilageTile = MakeTile(mucilageColor);
-        coreTile = MakeTile(coreColor);
+        // Piksel art dokular (gri tonlu çizilir, tile rengiyle boyanır)
+        mucilageTile = MakeTile(mucilageColor, PixelArt.MucilageTile());
+        coreTile = MakeTile(coreColor, PixelArt.CoreTile());
         SpreadInterval = cfg.spreadInterval;
     }
 
@@ -99,10 +100,10 @@ public class MucilageGrid : MonoBehaviour
         return c;
     }
 
-    Tile MakeTile(Color color)
+    Tile MakeTile(Color color, Sprite sprite)
     {
         Tile t = ScriptableObject.CreateInstance<Tile>();
-        t.sprite = squareSprite;
+        t.sprite = sprite ? sprite : squareSprite;
         t.color = color;
         t.flags = TileFlags.None; // Kare kare renk ve boyut değiştirebilmek için kilitleri kaldır
         return t;

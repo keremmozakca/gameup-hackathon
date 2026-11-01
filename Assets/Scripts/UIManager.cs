@@ -34,10 +34,10 @@ public class UIManager : MonoBehaviour
     // Giriş ekranı: oyun ilk açıldığında menüden önce sırayla beliren satırlar
     static readonly string[] IntroLines =
     {
-        "2021 baharında Marmara Denizi'nin yüzeyi müsilajla kaplandı.",
-        "Deniz salyası olarak da bilinen bu tabaka ışığı ve oksijeni keser; altındaki canlılar boğulur.",
-        "Isınan su, arıtılmamış atık sular ve durgun deniz onu besler.",
-        "Sen bir gönüllü dalgıçsın. Nefesin yettiğince dal ve temizle.",
+        "Dedem bu denizden ekmeğini çıkardı. Babam da. Şimdi ağlarımız boş, denizin üstü gri bir örtüyle kaplı.",
+        "Su ısındıkça, kıyıdan arıtılmamış atıklar aktıkça örtü kalınlaşıyor. Altındaki her şey boğuluyor.",
+        "Kimse beklemiyor artık. Ben bekleyemem. Bir nefes, bir dalış. Marmara nefes alana kadar.",
+        "— Deniz, serbest dalgıç",
     };
     const float IntroLineDelay = 1.6f; // Satırların arka arkaya belirme aralığı (sn)
 
@@ -81,6 +81,7 @@ public class UIManager : MonoBehaviour
     Vector3[] popupWorld;
     int popupNext;
     GameObject ranksPanel;
+    GameObject pausePanel;
     SewagePipe pipe;
     float rankToastTimer;
 
@@ -104,6 +105,7 @@ public class UIManager : MonoBehaviour
         BuildMenu();
         BuildGameOver();
         BuildRanks();
+        BuildPause();
         BuildIntro();
     }
 
@@ -156,6 +158,7 @@ public class UIManager : MonoBehaviour
 
     void Update()
     {
+        pausePanel.SetActive(GameManager.I.Paused);
         if (!hud.activeSelf) return;
 
         // Nefes barı: dalgıcın üstünü takip eder. Overlay canvas'ta konum = ekran pikseli.
@@ -433,6 +436,16 @@ public class UIManager : MonoBehaviour
 
         menuBest = MakeText("Best", p, "", 28, TextAnchor.MiddleCenter, new Color(1, 1, 1, 0.7f));
         SetRect(menuBest.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, -270), new Vector2(800, 40));
+    }
+
+    void BuildPause()
+    {
+        RectTransform p = MakePanel("Pause");
+        p.GetComponent<Image>().color = new Color(0.01f, 0.06f, 0.09f, 0.75f);
+        pausePanel = p.gameObject;
+        TMP_Text t = MakeText("Text", p, "DURAKLATILDI\n<size=40%>Devam etmek için Esc</size>", 80, TextAnchor.MiddleCenter, Color.white);
+        SetRect(t.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1200, 300));
+        pausePanel.SetActive(false);
     }
 
     // Rütbeler ekranı: her rütbenin puanı ve verdiği avantaj
