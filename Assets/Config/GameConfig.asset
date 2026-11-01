@@ -37,3 +37,16 @@ MonoBehaviour:
   stageSpreadMultiplier: 0.85
   coresPerStage: 1
   loseDensity: 0.85
+  scoreMucilage: 10
+  scoreCore: 100
+  deepScoreMultiplier: 1.5
+  scorePerSecond: 2
+  comboStep: 0.1
+  comboMax: 3
+  rankNames:
+  - "\xC7aylak Dalg\u0131\xE7"
+  - "K\u0131y\u0131 G\xF6n\xFCll\xFCs\xFC"
+  - "Serbest Dalg\u0131\xE7"
+  - "Marmara Bek\xE7isi"
+  - Denizin Nefesi
+  rankThresholds: 00000000dc050000a00f0000401f0000983a0000

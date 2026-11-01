@@ -33,11 +33,15 @@ Ana fikir: "Deniz nefes alamıyor, sen de alamıyorsun." Hedef oynanış: tur ba
    Stage, Temperature, ElapsedTime, StageProgress01; eventler `OnStateChanged`, `OnStageChanged`. Yayılma aralığı
    `grid.SpreadInterval` üzerinden değişir (config'e yazılmaz). Restart sahneyi yeniden yükler, menüyü atlar.
    Geçici OnGUI var. Kurulum menüsü: "Marmara > GameManager'ı Kur".
+8. `ScoreManager.cs` (GameManager objesinde, `ScoreManager.I`): Score, Combo, RankIndex, RankName, IsMaxRank,
+   PointsToNextRank, TopScores (PlayerPrefs "top0".."top4"), IsNewBest; eventler `OnRankUp(name)`, `OnPointsGained(points)`.
+   Geçici OnGUI var. Menüler: "Marmara > Skor Sistemini Kur", "Marmara > En İyi Skorları Sıfırla".
 
 Mevcut GameConfig alanları: width, height, startMucilageCells, startCores, spreadInterval, spreadChance, coreSpreadChance, swimForce, mucilageSpeedMultiplier,
 mucilageHp, coreHp, suctionPower, suctionRange, suctionAngle,
 breathMax, mucilageBreathMultiplier, breathRefillTime, faintDuration, boatPosition,
-stageDuration, startTemperature, temperaturePerStage, stageSpreadMultiplier, coresPerStage, loseDensity.
+stageDuration, startTemperature, temperaturePerStage, stageSpreadMultiplier, coresPerStage, loseDensity,
+scoreMucilage, scoreCore, deepScoreMultiplier, scorePerSecond, comboStep, comboMax, rankNames, rankThresholds.
 
 ## Kalan adımlar (bu sırayla)
 5. **Emme (SuctionTool):** Sol tık basılı → fare yönünde koni (menzil 3, açı 50°). Konideki karelerin hp'si `suctionPower * dt` azalır.

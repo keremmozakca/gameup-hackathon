@@ -91,4 +91,32 @@ public class GameConfig : ScriptableObject
     [Header("Oyun Sonu")]
     [Tooltip("Müsilaj yoğunluğu bu orana ulaşınca oyun biter (0.85 = %85)")]
     [Range(0f, 1f)] public float loseDensity = 0.85f;
+
+    // ---------- ADIM 8: SKOR ----------
+    [Header("Skor")]
+    [Tooltip("Normal müsilaj karesi temizleme puanı")]
+    public int scoreMucilage = 10;
+
+    [Tooltip("Çekirdek temizleme puanı")]
+    public int scoreCore = 100;
+
+    [Tooltip("Alt yarıda (derinde) temizlenen karelerin puan çarpanı")]
+    public float deepScoreMultiplier = 1.5f;
+
+    [Tooltip("Oyunda hayatta kalınan her saniye için puan")]
+    public float scorePerSecond = 2f;
+
+    [Header("Kombo")]
+    [Tooltip("Yüzeye çıkmadan temizlenen her kare komboyu bu kadar artırır")]
+    public float comboStep = 0.1f;
+
+    [Tooltip("Kombo çarpanının üst sınırı")]
+    public float comboMax = 3f;
+
+    [Header("Rütbeler")]
+    [Tooltip("Rütbe adları, küçükten büyüğe")]
+    public string[] rankNames = { "Çaylak Dalgıç", "Kıyı Gönüllüsü", "Serbest Dalgıç", "Marmara Bekçisi", "Denizin Nefesi" };
+
+    [Tooltip("Her rütbe için gereken puan (rankNames ile aynı sırada)")]
+    public int[] rankThresholds = { 0, 1500, 4000, 8000, 15000 };
 }
