@@ -84,6 +84,7 @@ public class GameManager : MonoBehaviour
 
             case State.GameOver:
                 if (Input.GetKeyDown(KeyCode.R) || Input.GetKeyDown(KeyCode.Space)) Restart();
+                if (Input.GetKeyDown(KeyCode.M)) GoToMenu();
                 break;
         }
     }
@@ -121,6 +122,14 @@ public class GameManager : MonoBehaviour
         grid.SpreadInterval *= cfg.stageSpreadMultiplier;
         for (int i = 0; i < cfg.coresPerStage; i++) grid.SpawnCore();
         OnStageChanged?.Invoke(Stage);
+    }
+
+    // Ana menüye dön: sahne tamamen baştan yüklenir
+    public void GoToMenu()
+    {
+        skipMenu = false;
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     public void Restart()

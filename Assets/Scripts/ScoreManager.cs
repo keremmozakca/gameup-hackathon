@@ -1,4 +1,22 @@
+using System.Collections.Generic;
 using UnityEngine;
+
+// Skor geçmişindeki bir oyun (JSON olarak saklanır)
+[System.Serializable]
+public class ScoreRecord
+{
+    public int score;
+    public string rank;
+    public int seconds;
+    public int fish;
+    public string date;
+}
+
+[System.Serializable]
+class ScoreHistory
+{
+    public List<ScoreRecord> items = new List<ScoreRecord>();
+}
 
 // Skor, kombo, rütbe ve en iyi 5 skor. GameManager objesine ekle.
 // Temizlenen kareler ve hayatta kalınan süre puan getirir.
@@ -25,6 +43,8 @@ public class ScoreManager : MonoBehaviour
     public bool IsMaxRank => RankIndex >= cfg.rankThresholds.Length - 1;
     public int PointsToNextRank => IsMaxRank ? 0 : cfg.rankThresholds[RankIndex + 1] - Score;
     public int[] TopScores { get; private set; } = new int[TopCount];
+    public List<ScoreRecord> History { get; private set; } = new List<ScoreRecord>(); // tüm oyunlar (en fazla 30)
+    const string HistoryKey = "history";
     public bool IsNewBest { get; private set; }        // Oyun sonunda: bu skor 1. sıraya mı girdi?
 
     // Arayüz bunları dinleyecek
@@ -34,12 +54,15 @@ public class ScoreManager : MonoBehaviour
 
     float score;      // Saniye puanı küsuratlı biriktiği için float tutuyoruz
     float comboTimer; // Kombonun düşmesine kalan saniye
+    int diveCells;      // Bu dalışta temizlenen kare sayısı
+    float diveMaxCombo = 1f;
     PlayerController player;
 
     void Awake()
     {
         I = this;
         LoadTopScores();
+        LoadHistory();
     }
 
     void Start()
@@ -62,7 +85,12 @@ public class ScoreManager : MonoBehaviour
 
         // Dalış bitti (yüzeye değdi veya bayıldı) ya da süre doldu → kombo düşer
         comboTimer -= Time.deltaTime;
-        if (!IsDiving || comboTimer <= 0f) ResetCombo();
+        if (!IsDiving)
+        {
+            if (diveCells > 0) EndDive();
+            ResetCombo();
+        }
+        else if (comboTimer <= 0f) ResetCombo();
     }
 
     // Kombo sadece su altında ve baygın değilken geçerli
@@ -74,13 +102,15 @@ public class ScoreManager : MonoBehaviour
     {
         float points = wasCore ? cfg.scoreCore : cfg.scoreMucilage;
         if (cell.y < grid.H / 2) points *= cfg.deepScoreMultiplier;
-        points *= Combo;
+        points *= Combo * CrisisManager.ScoreMult;
 
         AddScore(points);
         OnPointsGained?.Invoke(Mathf.RoundToInt(points));
 
         if (!IsDiving) return;
         Combo = Mathf.Min(Combo + (wasCore ? cfg.comboCoreStep : cfg.comboStep), ComboMax);
+        diveCells++;
+        diveMaxCombo = Mathf.Max(diveMaxCombo, Combo);
         comboTimer = cfg.comboTimeout;
     }
 
@@ -96,6 +126,17 @@ public class ScoreManager : MonoBehaviour
     public void Popup(Vector2 worldPos, string text, bool good) => OnPopup?.Invoke(worldPos, text, good);
 
     public void CountFishRescued() => FishRescued++;
+
+    // Dalış bitti: sağ çıktıysan riskin karşılığı bonus, bayıldıysan kaybolur
+    void EndDive()
+    {
+        Vector2 pos = player.transform.position + Vector3.up;
+        int bonus = Mathf.RoundToInt(diveCells * cfg.diveBonusPerCell * (diveMaxCombo - 1f) * CrisisManager.ScoreMult);
+        if (breath.IsFainted) Popup(pos, "Bayıldın: dalış bonusu kayboldu", false);
+        else if (bonus > 0) AddBonus(bonus, pos, $"Dalış bonusu ({diveCells} kare)");
+        diveCells = 0;
+        diveMaxCombo = 1f;
+    }
 
     void ResetCombo()
     {
@@ -142,6 +183,26 @@ public class ScoreManager : MonoBehaviour
         }
 
         for (int i = 0; i < TopCount; i++) PlayerPrefs.SetInt("top" + i, TopScores[i]);
+
+        // Skor geçmişi: JSON olarak saklanır (WebGL'de tarayıcı deposunda kalır)
+        History.Add(new ScoreRecord
+        {
+            score = s,
+            rank = RankName,
+            seconds = Mathf.RoundToInt(GameManager.I.ElapsedTime),
+            fish = FishRescued,
+            date = System.DateTime.Now.ToString("dd.MM.yyyy HH:mm"),
+        });
+        while (History.Count > 30) History.RemoveAt(0);
+        PlayerPrefs.SetString(HistoryKey, JsonUtility.ToJson(new ScoreHistory { items = History }));
         PlayerPrefs.Save();
+    }
+
+    void LoadHistory()
+    {
+        string json = PlayerPrefs.GetString(HistoryKey, "");
+        if (string.IsNullOrEmpty(json)) return;
+        ScoreHistory h = JsonUtility.FromJson<ScoreHistory>(json);
+        if (h != null && h.items != null) History = h.items;
     }
 }

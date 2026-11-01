@@ -218,6 +218,12 @@ public class MucilageGrid : MonoBehaviour
         tilemap.SetTile((Vector3Int)c, null);
     }
 
+    // Kare normal müsilajsa puan vermeden temizler (balıkçılar haberi)
+    public void ClearIfNormal(Vector2Int c)
+    {
+        if (IsInfected(c) && !isCore[c.x, c.y]) ClearCell(c);
+    }
+
     // Fırtına haberi: normal müsilaj karelerinin bir kısmını dağıtır (çekirdeklere dokunmaz, puan vermez)
     public void ScatterMucilage(float fraction)
     {

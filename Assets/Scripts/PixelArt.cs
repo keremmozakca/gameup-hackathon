@@ -8,6 +8,9 @@ public static class PixelArt
 {
     static readonly Dictionary<string, Sprite> cache = new Dictionary<string, Sprite>();
 
+    // Sahne yeniden yüklenince Unity kullanılmayan dokuları silebilir; silinmişse yeniden çiz
+    static bool TryCached(string key, out Sprite s) => cache.TryGetValue(key, out s) && s != null;
+
     static Color C(string hex)
     {
         ColorUtility.TryParseHtmlString(hex, out Color c);
@@ -27,13 +30,16 @@ public static class PixelArt
     {
         t.Apply();
         Sprite s = Sprite.Create(t, new Rect(0, 0, t.width, t.height), pivot, ppu, 0, SpriteMeshType.FullRect);
+        // Sahne değişiminde bellekten silinmesin ("Yeniden dal" sonrası görseller kaybolmasın)
+        t.hideFlags = HideFlags.DontUnloadUnusedAsset;
+        s.hideFlags = HideFlags.DontUnloadUnusedAsset;
         cache[key] = s;
         return s;
     }
 
     static Sprite FromRows(string key, string[] rows, Dictionary<char, Color> pal, float ppu, Vector2 pivot)
     {
-        if (cache.TryGetValue(key, out Sprite s)) return s;
+        if (TryCached(key, out Sprite s)) return s;
         int h = rows.Length, w = 0;
         foreach (string r in rows) w = Mathf.Max(w, r.Length);
         Texture2D t = NewTex(w, h);
@@ -41,6 +47,65 @@ public static class PixelArt
             for (int x = 0; x < rows[row].Length; x++)
                 if (pal.TryGetValue(rows[row][x], out Color c)) t.SetPixel(x, h - 1 - row, c);
         return Make(key, t, ppu, pivot);
+    }
+
+    // ---------- Piksel yazı (başlık için) ----------
+
+    // 9 satırlık harfler: üstteki 2 satır noktalar (İ) için boş bırakıldı
+    static readonly Dictionary<char, string[]> Glyphs = new Dictionary<char, string[]>
+    {
+        { 'A', new[] { ".....", ".....", ".###.", "#...#", "#...#", "#####", "#...#", "#...#", "#...#" } },
+        { 'E', new[] { ".....", ".....", "#####", "#....", "#....", "####.", "#....", "#....", "#####" } },
+        { 'F', new[] { ".....", ".....", "#####", "#....", "#....", "####.", "#....", "#....", "#...." } },
+        { 'I', new[] { "...", "...", "###", ".#.", ".#.", ".#.", ".#.", ".#.", "###" } },
+        { 'İ', new[] { ".#.", "...", "###", ".#.", ".#.", ".#.", ".#.", ".#.", "###" } },
+        { 'M', new[] { ".....", ".....", "#...#", "##.##", "#.#.#", "#.#.#", "#...#", "#...#", "#...#" } },
+        { 'N', new[] { ".....", ".....", "#...#", "##..#", "##..#", "#.#.#", "#..##", "#..##", "#...#" } },
+        { 'R', new[] { ".....", ".....", "####.", "#...#", "#...#", "####.", "#.#..", "#..#.", "#...#" } },
+        { 'S', new[] { ".....", ".....", ".####", "#....", "#....", ".###.", "....#", "....#", "####." } },
+        { '\'', new[] { "..", "..", "##", "##", ".#", "#.", "..", "..", ".." } },
+        { ' ', new[] { "...", "...", "...", "...", "...", "...", "...", "...", "..." } },
+    };
+
+    static int LineWidth(string line)
+    {
+        int w = 0;
+        foreach (char ch in line) if (Glyphs.TryGetValue(ch, out string[] g)) w += g[0].Length + 1;
+        return Mathf.Max(0, w - 1);
+    }
+
+    // Satırları ortalayarak piksel yazı çizer; her pikselin sağ altına gölge düşer
+    public static Sprite Title(string key, string[] lines, Color fill, Color shadow)
+    {
+        if (TryCached(key, out Sprite s)) return s;
+        const int gh = 9, gap = 2;
+        int w = 0;
+        foreach (string l in lines) w = Mathf.Max(w, LineWidth(l));
+        w += 1;
+        int h = lines.Length * gh + (lines.Length - 1) * gap + 1;
+        Texture2D t = NewTex(w, h);
+
+        for (int pass = 0; pass < 2; pass++) // önce gölge, sonra harf
+        {
+            for (int li = 0; li < lines.Length; li++)
+            {
+                int top = h - 1 - li * (gh + gap);
+                int x = (w - 1 - LineWidth(lines[li])) / 2;
+                foreach (char ch in lines[li])
+                {
+                    if (!Glyphs.TryGetValue(ch, out string[] g)) continue;
+                    for (int r = 0; r < gh; r++)
+                        for (int c = 0; c < g[r].Length; c++)
+                        {
+                            if (g[r][c] != '#') continue;
+                            if (pass == 0) t.SetPixel(x + c + 1, top - r - 1, shadow);
+                            else t.SetPixel(x + c, top - r, fill);
+                        }
+                    x += g[0].Length + 1;
+                }
+            }
+        }
+        return Make(key, t, 100f, new Vector2(0.5f, 0.5f));
     }
 
     // ---------- Karakterler ----------
@@ -121,6 +186,17 @@ public static class PixelArt
         { 'K', C("#1A1C2C") }, { 'R', C("#C8423B") }, { 'W', C("#F4F1E8") }, { 'G', C("#8FE3F0") }, { 'A', C("#FF7A59") },
     }, 10f, new Vector2(0.5f, 0.25f));
 
+    // Dolu piksel daire (termometre haznesi gibi arayüz parçaları için)
+    public static Sprite Disc()
+    {
+        if (TryCached("disc", out Sprite s)) return s;
+        Texture2D t = NewTex(16, 16);
+        for (int x = 0; x < 16; x++)
+            for (int y = 0; y < 16; y++)
+                if ((x - 7.5f) * (x - 7.5f) + (y - 7.5f) * (y - 7.5f) <= 60f) t.SetPixel(x, y, Color.white);
+        return Make("disc", t, 16f, new Vector2(0.5f, 0.5f));
+    }
+
     public static Sprite Bubble() => FromRows("bubble", new[] { ".W.", "W.W", ".W." },
         new Dictionary<char, Color> { { 'W', new Color(1f, 1f, 1f, 0.8f) } }, 16f, new Vector2(0.5f, 0.5f));
 
@@ -128,7 +204,7 @@ public static class PixelArt
 
     public static Sprite MucilageTile()
     {
-        if (cache.TryGetValue("mucilage", out Sprite s)) return s;
+        if (TryCached("mucilage", out Sprite s)) return s;
         System.Random r = new System.Random(7);
         Texture2D t = NewTex(16, 16);
         for (int x = 0; x < 16; x++)
@@ -146,7 +222,7 @@ public static class PixelArt
 
     public static Sprite CoreTile()
     {
-        if (cache.TryGetValue("core", out Sprite s)) return s;
+        if (TryCached("core", out Sprite s)) return s;
         System.Random r = new System.Random(11);
         Texture2D t = NewTex(16, 16);
         for (int x = 0; x < 16; x++)
@@ -167,7 +243,7 @@ public static class PixelArt
     // Dalga şeridi (2 birim genişlik): alt kısım su, tepede köpük
     public static Sprite Wave(string key, Color water, Color foam, float phase)
     {
-        if (cache.TryGetValue(key, out Sprite s)) return s;
+        if (TryCached(key, out Sprite s)) return s;
         Texture2D t = NewTex(32, 8);
         for (int x = 0; x < 32; x++)
         {
@@ -181,7 +257,7 @@ public static class PixelArt
     // Dikey degrade (alttan üste), kaba bantlı: piksel art hissi verir
     public static Sprite Gradient(string key, Color bottom, Color top, int steps)
     {
-        if (cache.TryGetValue(key, out Sprite s)) return s;
+        if (TryCached(key, out Sprite s)) return s;
         Texture2D t = NewTex(1, steps);
         for (int y = 0; y < steps; y++) t.SetPixel(0, y, Color.Lerp(bottom, top, y / (steps - 1f)));
         return Make(key, t, 1f, Vector2.zero);
@@ -190,7 +266,7 @@ public static class PixelArt
     // Uzakta İstanbul silueti: binalar, iki cami (kubbe + minareler)
     public static Sprite Skyline()
     {
-        if (cache.TryGetValue("skyline", out Sprite s)) return s;
+        if (TryCached("skyline", out Sprite s)) return s;
         const int w = 256, h = 16;
         Color c = C("#8EA3B5");
         Texture2D t = NewTex(w, h);
@@ -217,7 +293,7 @@ public static class PixelArt
 
     public static Sprite Cloud()
     {
-        if (cache.TryGetValue("cloud", out Sprite s)) return s;
+        if (TryCached("cloud", out Sprite s)) return s;
         Texture2D t = NewTex(24, 8);
         for (int x = 0; x < 24; x++)
             for (int y = 0; y < 8; y++)
@@ -232,7 +308,7 @@ public static class PixelArt
     // Deniz tabanı: dalgalı kum ve taşlar (32 birim genişlik, 1 birim yükseklik)
     public static Sprite Seabed()
     {
-        if (cache.TryGetValue("seabed", out Sprite s)) return s;
+        if (TryCached("seabed", out Sprite s)) return s;
         const int w = 256, h = 8;
         Texture2D t = NewTex(w, h);
         System.Random r = new System.Random(5);
@@ -255,7 +331,7 @@ public static class PixelArt
 
     public static Sprite Kelp()
     {
-        if (cache.TryGetValue("kelp", out Sprite s)) return s;
+        if (TryCached("kelp", out Sprite s)) return s;
         Texture2D t = NewTex(4, 22);
         Color g = C("#2E8B57"), d = C("#1F5E3B");
         for (int y = 0; y < 22; y++)

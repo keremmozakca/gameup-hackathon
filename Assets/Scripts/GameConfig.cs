@@ -116,6 +116,9 @@ public class GameConfig : ScriptableObject
     [Tooltip("Bu kadar saniye hiç kare temizlenmezse kombo düşer (x1'e döner)")]
     public float comboTimeout = 3f;
 
+    [Tooltip("Dalış bonusu: yüzeye sağ çıkınca, dalışta temizlenen her kare için (en yüksek kombo - 1) x bu kadar puan. Bayılırsan kaybolur")]
+    public float diveBonusPerCell = 5f;
+
     [Tooltip("Kombo çarpanının üst sınırı")]
     public float comboMax = 3f;
 
@@ -189,7 +192,7 @@ public class GameConfig : ScriptableObject
     public string[] rankNames = { "Çaylak Dalgıç", "Kıyı Gönüllüsü", "Serbest Dalgıç", "Marmara Bekçisi", "Denizin Nefesi" };
 
     [Tooltip("Her rütbe için gereken puan (rankNames ile aynı sırada)")]
-    public int[] rankThresholds = { 0, 1500, 4000, 8000, 15000 };
+    public int[] rankThresholds = { 0, 2000, 5000, 10000, 18000 };
 
     [Tooltip("Her rütbenin verdiği avantajın açıklaması (rankNames ile aynı sırada)")]
     public string[] rankPerks =

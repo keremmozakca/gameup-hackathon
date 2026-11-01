@@ -1,8 +1,9 @@
 using UnityEngine;
 
 // Dünyadan kriz haberleri. GameManager objesine ekle.
-// Belirli aralıklarla "SON DAKİKA" haberi gelir; her haberin süreli bir etkisi vardır.
-// Kötü haberler oyunu zorlaştırır, iyi haberler nefes aldırır. Aşama ilerledikçe kötü haber sıklaşır.
+// Belirli aralıklarla "SON DAKİKA" veya "İYİ HABER" gelir; her haberin süreli bir etkisi vardır.
+// Kötü haberler oyunu zorlaştırır, iyi haberler nefes aldırır. Aşama ilerledikçe kötü haber sıklaşır
+// ve bazı ağır haberler (ör. sıcaklık rekoru) ancak ileri aşamalarda gelir.
 // Diğer scriptler etkileri statik çarpanlardan okur (ör. CrisisManager.SpreadSpeed).
 public class CrisisManager : MonoBehaviour
 {
@@ -19,6 +20,7 @@ public class CrisisManager : MonoBehaviour
     public static float PipeRate { get; private set; } = 1f;     // Boru akış hızı çarpanı
     public static bool PipeStopped { get; private set; }         // Boru tamamen durdu mu?
     public static float TempBonus { get; private set; }          // Termometreye eklenen geçici °C
+    public static float ScoreMult { get; private set; } = 1f;    // Puan çarpanı
 
     // ---- Arayüz için ----
     public bool Active => remaining > 0f;
@@ -28,9 +30,15 @@ public class CrisisManager : MonoBehaviour
     public float Remaining01 => duration > 0f ? remaining / duration : 0f;
     public event System.Action OnCrisisStarted;
 
-    enum Kind { Tanker, HeatWave, Industry, Bloom, Storm, Volunteers, Treatment }
-    static readonly Kind[] BadNews = { Kind.Tanker, Kind.HeatWave, Kind.Industry, Kind.Bloom };
-    static readonly Kind[] GoodNews = { Kind.Storm, Kind.Volunteers, Kind.Treatment };
+    enum Kind
+    {
+        // kötü
+        Tanker, HeatWave, Industry, Bloom, StormDrain, Tourism, HeatRecord, Drought,
+        // iyi
+        Storm, Volunteers, Treatment, Documentary, ZeroWaste, Fishermen,
+    }
+    static readonly Kind[] BadNews = { Kind.Tanker, Kind.HeatWave, Kind.Industry, Kind.Bloom, Kind.StormDrain, Kind.Tourism, Kind.HeatRecord, Kind.Drought };
+    static readonly Kind[] GoodNews = { Kind.Storm, Kind.Volunteers, Kind.Treatment, Kind.Documentary, Kind.ZeroWaste, Kind.Fishermen };
 
     float nextTimer;  // Sonraki habere kalan süre
     float remaining;  // Aktif haberin kalan süresi
@@ -54,7 +62,9 @@ public class CrisisManager : MonoBehaviour
             if (remaining <= 0f)
             {
                 ResetEffects();
-                nextTimer = Random.Range(cfg.crisisGapMin, cfg.crisisGapMax);
+                // İleri aşamalarda haberler daha sık gelir
+                float squeeze = Mathf.Max(0.5f, 1f - GameManager.I.Stage * 0.08f);
+                nextTimer = Random.Range(cfg.crisisGapMin, cfg.crisisGapMax) * squeeze;
             }
             return;
         }
@@ -65,11 +75,18 @@ public class CrisisManager : MonoBehaviour
 
     void StartRandom()
     {
-        float goodChance = Mathf.Max(0.1f, cfg.goodNewsChance - GameManager.I.Stage * cfg.goodNewsDropPerStage);
+        int stage = GameManager.I.Stage;
+        float goodChance = Mathf.Max(0.15f, cfg.goodNewsChance - stage * cfg.goodNewsDropPerStage);
         Kind[] pool = Random.value < goodChance ? GoodNews : BadNews;
 
-        Kind k = pool[Random.Range(0, pool.Length)];
-        if (k == last) k = pool[(System.Array.IndexOf(pool, k) + 1) % pool.Length]; // aynı haber üst üste gelmesin
+        // Uygun bir haber seç: aynısı üst üste gelmesin, ağır haberler erken gelmesin
+        Kind k = last;
+        for (int tries = 0; tries < 20; tries++)
+        {
+            k = pool[Random.Range(0, pool.Length)];
+            bool tooEarly = (k == Kind.HeatRecord && stage < 3) || (k == Kind.Drought && stage < 2);
+            if (k != last && !tooEarly) break;
+        }
         last = k;
         Begin(k);
     }
@@ -79,6 +96,7 @@ public class CrisisManager : MonoBehaviour
         ResetEffects();
         switch (k)
         {
+            // ---------- Kötü haberler ----------
             case Kind.Tanker:
                 Set("Tanker kazası! Marmara'ya petrol sızdı", "Yüzeyin bir kısmı kapandı, nefesin 1.5 kat hızlı bitiyor", false, 25f);
                 BreathDrain = 1.5f;
@@ -99,8 +117,31 @@ public class CrisisManager : MonoBehaviour
                 Set("Kıyıda müsilaj patlaması!", "Derinde 3 yeni çekirdek belirdi", false, 8f);
                 for (int i = 0; i < 3; i++) grid.SpawnCore();
                 break;
+            case Kind.StormDrain:
+                Set("Sağanak: yağmur suyu kanalları denize taştı", "Boru 3 kat akıyor, yüzeye atık yayıldı", false, 20f);
+                PipeRate = 3f;
+                CoverSurface(6);
+                break;
+            case Kind.Tourism:
+                Set("Turizm sezonu: kıyıdaki atık iki katına çıktı", "Boru 2 kat akıyor, 2 yeni çekirdek", false, 25f);
+                PipeRate = 2f;
+                grid.SpawnCore();
+                grid.SpawnCore();
+                break;
+            case Kind.HeatRecord:
+                Set("Sıcaklık rekoru kırıldı: deniz suyu 3 °C ısındı!", "Müsilaj 2.5 kat hızlı yayılıyor, nefesin daralıyor", false, 20f);
+                SpreadSpeed = 2.5f;
+                TempBonus = 3f;
+                BreathDrain = 1.25f;
+                break;
+            case Kind.Drought:
+                Set("Rüzgarsız günler: deniz durgunlaştı", "Akıntı yok, müsilaj 1.5 kat hızlı yayılıyor", false, 30f);
+                SpreadSpeed = 1.5f;
+                break;
+
+            // ---------- İyi haberler ----------
             case Kind.Storm:
-                Set("Fırtına çıktı: akıntı denizi karıştırdı", "Müsilajın bir kısmı dağıldı", true, 8f);
+                Set("Lodos çıktı: akıntı denizi karıştırdı", "Müsilajın dörtte biri dağıldı", true, 8f);
                 grid.ScatterMucilage(0.25f);
                 break;
             case Kind.Volunteers:
@@ -111,6 +152,18 @@ public class CrisisManager : MonoBehaviour
                 Set("Belediye yeni arıtma tesisini açtı", "Boru durdu, müsilaj yavaş yayılıyor", true, 30f);
                 PipeStopped = true;
                 SpreadSpeed = 0.6f;
+                break;
+            case Kind.Documentary:
+                Set("Bir belgesel ekibi seni çekiyor", "Tüm puanlar 2 kat", true, 20f);
+                ScoreMult = 2f;
+                break;
+            case Kind.ZeroWaste:
+                Set("Meclis atık su yasasını kabul etti", "Boru 45 sn kapalı", true, 45f);
+                PipeStopped = true;
+                break;
+            case Kind.Fishermen:
+                Set("Balıkçılar ağlarıyla yüzeyi topluyor", "Yüzeydeki müsilaj temizlendi, nefes rahat", true, 10f);
+                ClearSurface();
                 break;
         }
         OnCrisisStarted?.Invoke();
@@ -135,9 +188,17 @@ public class CrisisManager : MonoBehaviour
         }
     }
 
+    // Balıkçılar: en üst iki satırdaki normal müsilajı toplar (puan vermez)
+    void ClearSurface()
+    {
+        for (int x = 0; x < grid.W; x++)
+            for (int y = grid.H - 2; y < grid.H; y++)
+                grid.ClearIfNormal(new Vector2Int(x, y));
+    }
+
     static void ResetEffects()
     {
-        SpreadSpeed = BreathDrain = SuctionPower = PipeRate = 1f;
+        SpreadSpeed = BreathDrain = SuctionPower = PipeRate = ScoreMult = 1f;
         PipeStopped = false;
         TempBonus = 0f;
     }

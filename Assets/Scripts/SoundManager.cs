@@ -16,6 +16,7 @@ public class SoundManager : MonoBehaviour
 
     AudioSource oneShot;
     AudioSource suctionLoop;
+    AudioSource ambience; // su altı uğultusu: giriş hikâyesinde boğuk bir fon
     AudioClip pop, corePop, gasp, faint, rankUp, gameOver, suctionNoise;
     float popTimer;
 
@@ -37,6 +38,12 @@ public class SoundManager : MonoBehaviour
         suctionLoop.loop = true;
         suctionLoop.volume = 0f;
         suctionLoop.Play();
+
+        ambience = gameObject.AddComponent<AudioSource>();
+        ambience.clip = Noise("ambience", 3f, 1f, 0.004f, true); // çok yumuşatılmış gürültü = derin uğultu
+        ambience.loop = true;
+        ambience.volume = 0f;
+        ambience.Play();
     }
 
     void Start()
@@ -68,6 +75,9 @@ public class SoundManager : MonoBehaviour
         bool on = suction.IsSucking && GameManager.I.CurrentState == GameManager.State.Playing;
         float target = on ? 0.25f * masterVolume : 0f;
         suctionLoop.volume = Mathf.MoveTowards(suctionLoop.volume, target, Time.unscaledDeltaTime * 2f);
+
+        float amb = (UIManager.IntroOpen ? 0.9f : 0.35f) * masterVolume;
+        ambience.volume = Mathf.MoveTowards(ambience.volume, amb, Time.unscaledDeltaTime * 0.5f);
     }
 
     void HandleCleared(Vector2Int cell, bool wasCore)

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -22,6 +23,9 @@ public class UIManager : MonoBehaviour
     static readonly Color Accent = new Color32(0xFF, 0x7A, 0x59, 0xFF);
     static readonly Color PanelBg = new Color(0.02f, 0.12f, 0.17f, 0.92f);
     static readonly Color BarBg = new Color(0f, 0f, 0f, 0.5f);
+    static readonly Color BoxBg = new Color32(0x05, 0x1E, 0x2B, 0xD9);  // HUD kutularının içi
+    static readonly Color Warm = new Color32(0xF2, 0xC1, 0x4E, 0xFF);   // sarı (ara renk)
+    static readonly Color Green = new Color32(0x5F, 0xD0, 0x7A, 0xFF);
 
     const float ThermoStages = 8f;    // Termometre kaç aşamada tamamen dolar (sadece görsel)
     const float RankToastTime = 4f;   // Rütbe bildiriminin ekranda kalma süresi
@@ -39,12 +43,13 @@ public class UIManager : MonoBehaviour
         "Kimse beklemiyor artık. Ben bekleyemem. Bir nefes, bir dalış. Marmara nefes alana kadar.",
         "— Deniz, serbest dalgıç",
     };
-    const float IntroLineDelay = 1.6f; // Satırların arka arkaya belirme aralığı (sn)
+    static float LineTime(string line) => Mathf.Max(3f, line.Length * 0.075f); // seslendirmeye yetecek süre
 
     // Giriş ekranı açıkken GameManager menü tuşlarını dinlemez
     public static bool IntroOpen { get; private set; }
     static bool ranksOpen;
-    public static bool MenuBlocked => IntroOpen || ranksOpen; // GameManager menüde SPACE'i dinlemesin
+    static bool scoresOpen;
+    public static bool MenuBlocked => IntroOpen || ranksOpen || scoresOpen; // GameManager menüde SPACE'i dinlemesin
     static bool introDone; // Sahne yeniden yüklense de giriş bir kez gösterilir
 
     const string InfoText =
@@ -52,6 +57,12 @@ public class UIManager : MonoBehaviour
         "Oyunda yeniden başlayabilirsin. Marmara'da bunun bir tuşu yok.";
 
     TMP_FontAsset font;
+    Material shadowMat; // gölgeli yazı: piksel denizin üstünde okunur olsun
+    Image thermoBulb;
+    TMP_Text stageText;
+    TMP_Text densityPct;
+    bool introStarted;
+    int introSpoken;
     Camera cam;
     RectTransform canvasRt;
 
@@ -82,6 +93,10 @@ public class UIManager : MonoBehaviour
     int popupNext;
     GameObject ranksPanel;
     GameObject pausePanel;
+    GameObject scoresPanel;
+    TMP_Text scoresList;
+    TMP_Text diaryText;
+    float diaryTimer;
     SewagePipe pipe;
     float rankToastTimer;
 
@@ -99,6 +114,7 @@ public class UIManager : MonoBehaviour
     void Awake()
     {
         font = TMP_Settings.defaultFontAsset;
+        shadowMat = Resources.Load<Material>("Fonts & Materials/LiberationSans SDF - Drop Shadow");
         cam = Camera.main;
         BuildCanvas();
         BuildHud();
@@ -106,6 +122,7 @@ public class UIManager : MonoBehaviour
         BuildGameOver();
         BuildRanks();
         BuildPause();
+        BuildScores();
         BuildIntro();
     }
 
@@ -115,6 +132,7 @@ public class UIManager : MonoBehaviour
         ScoreManager.I.OnRankUp += ShowRankToast;
         ScoreManager.I.OnPopup += ShowPopup;
         CrisisManager.I.OnCrisisStarted += FlashCrisis;
+        GameManager.I.OnStageChanged += ShowDiary;
         pipe = FindFirstObjectByType<SewagePipe>();
         HandleState(GameManager.I.CurrentState);
     }
@@ -128,6 +146,7 @@ public class UIManager : MonoBehaviour
             ScoreManager.I.OnPopup -= ShowPopup;
         }
         if (CrisisManager.I) CrisisManager.I.OnCrisisStarted -= FlashCrisis;
+        if (GameManager.I) GameManager.I.OnStageChanged -= ShowDiary;
     }
 
     void HandleState(GameManager.State s)
@@ -139,6 +158,9 @@ public class UIManager : MonoBehaviour
         if (s == GameManager.State.Menu) FillMenuBest();
         ranksOpen = false;
         ranksPanel.SetActive(false);
+        scoresOpen = false;
+        scoresPanel.SetActive(false);
+        if (s == GameManager.State.Playing) ShowDiary(0);
         IntroOpen = s == GameManager.State.Menu && !introDone;
         introPanel.SetActive(IntroOpen);
         // ScoreManager da aynı olayda skoru kaydediyor; sıra belirsiz olduğu için doldurmayı bu karenin sonuna bırakıyoruz
@@ -165,29 +187,38 @@ public class UIManager : MonoBehaviour
         breathBar.position = cam.WorldToScreenPoint(breath.transform.position + Vector3.up * 0.9f);
         float b = breath.Breath01;
         breathFill.fillAmount = b;
-        breathFill.color = b < 0.3f ? Accent : Shallow;
+        // GDD: yeşil → sarı → kırmızı, son 3 saniyede yanıp söner
+        Color bc = b > 0.5f ? Color.Lerp(Warm, Green, (b - 0.5f) * 2f) : Color.Lerp(Bad, Warm, b * 2f);
+        if (breath.Breath < 3f && !breath.IsFainted && Mathf.Repeat(Time.time * 4f, 1f) < 0.5f) bc = Color.white;
+        breathFill.color = bc;
         breathBar.gameObject.SetActive(b < 0.999f || breath.IsFainted);
         breathLabel.text = breath.IsFainted ? "Bayıldın!" : breath.SurfaceBlocked ? "Yüzey kapalı!" : "";
 
         // Termometre
         GameManager gm = GameManager.I;
-        thermoFill.fillAmount = Mathf.Clamp01((gm.Stage + gm.StageProgress01) / ThermoStages);
-        thermoFill.color = Color.Lerp(Shallow, Accent, thermoFill.fillAmount);
-        thermoText.text = $"{gm.Temperature:0} °C";
+        float heat = Mathf.Clamp01((gm.Stage + gm.StageProgress01 + CrisisManager.TempBonus) / ThermoStages);
+        thermoFill.fillAmount = heat;
+        Color hc = heat < 0.5f ? Color.Lerp(Shallow, Warm, heat * 2f) : Color.Lerp(Warm, Bad, (heat - 0.5f) * 2f);
+        thermoFill.color = hc;
+        thermoBulb.color = hc;
+        thermoText.text = $"{gm.Temperature:0}<size=60%> °C</size>";
+        stageText.text = CrisisManager.TempBonus > 0f ? $"<color=#E84A3A>Aşama {gm.Stage + 1} · +{CrisisManager.TempBonus:0} °C</color>" : $"Aşama {gm.Stage + 1}";
 
         // Skor + kombo
         ScoreManager sm = ScoreManager.I;
         scoreText.text = sm.Score.ToString("N0");
         bool combo = sm.Combo > 1.01f;
-        comboText.text = combo ? $"Kombo x{sm.Combo:0.0}" : "";
+        string mult = CrisisManager.ScoreMult > 1f ? $"  <color=#7CF09A>PUAN x{CrisisManager.ScoreMult:0}</color>" : "";
+        comboText.text = (combo ? $"KOMBO x{sm.Combo:0.0}" : "") + mult;
         comboFill.transform.parent.gameObject.SetActive(combo);
         comboFill.fillAmount = sm.ComboTime01; // kombo süresi azalırken bar kısalır
 
         // Yoğunluk: kayıp sınırına göre dolar
         float danger = grid.Density / cfg.loseDensity;
         densityFill.fillAmount = Mathf.Clamp01(danger);
-        densityFill.color = Color.Lerp(Mucilage, Accent, Mathf.InverseLerp(0.6f, 1f, danger));
-        densityText.text = $"Müsilaj %{grid.Density * 100f:0}";
+        densityFill.color = danger < 0.6f ? Mucilage : Color.Lerp(Warm, Bad, Mathf.InverseLerp(0.6f, 1f, danger));
+        densityPct.text = $"%{grid.Density * 100f:0}";
+        densityPct.color = grid.Density >= VignetteStart ? Bad : Color.white; // GDD: %70 üstünde kırmızı
 
         // Vignette: yoğunluk %70'ten kayıp sınırına giderken kenarlar müsilaj rengiyle kararır ve nabız atar
         float v = Mathf.InverseLerp(VignetteStart, cfg.loseDensity, grid.Density);
@@ -200,6 +231,7 @@ public class UIManager : MonoBehaviour
 
         UpdateCrisis();
         UpdatePopups();
+        UpdateDiary();
         UpdatePipePrompt();
 
         // Rütbe bildirimi: yavaşça kaybolur
@@ -227,6 +259,39 @@ public class UIManager : MonoBehaviour
     }
 
     void FlashCrisis() => crisisFlash = 1f;
+
+    // Deniz'in günlüğü: her sıcaklık aşamasında hikâyeden bir satır
+    static readonly string[] Diary =
+    {
+        "22 °C. Dedemin teknesiyle ilk dalışım. Ciğerlerim hazır, deniz değil.",
+        "Dedem bu sıcaklığa 'yaz başı' derdi. Daha bahar bitmedi.",
+        "Ağlar yine boş döndü. Çekirdekler derine kök salmış.",
+        "Kıyıdaki borudan akan su kokuyor. Kimse görmüyor mu?",
+        "Bir balık sürüsü gördüm. Temiz suyu hâlâ hatırlıyorlar.",
+        "Nefesim kısalıyor. Deniz de benim gibi.",
+        "Haberler hep kötü. Ama her temiz kare bir umut.",
+        "Marmara hâlâ nefes alıyor. Ben de.",
+    };
+
+    void ShowDiary(int stage)
+    {
+        diaryText.text = $"<size=70%><color=#FF7A59>Deniz'in günlüğü · {GameManager.I.Temperature:0} °C</color></size>\n<i>{Diary[Mathf.Min(stage, Diary.Length - 1)]}</i>";
+        diaryTimer = 7f;
+    }
+
+    void UpdateDiary()
+    {
+        if (diaryTimer <= 0f)
+        {
+            diaryText.gameObject.SetActive(false);
+            return;
+        }
+        diaryTimer -= Time.deltaTime;
+        diaryText.gameObject.SetActive(true);
+        Color c = diaryText.color;
+        c.a = Mathf.Clamp01(diaryTimer) * Mathf.Clamp01((7f - diaryTimer) * 2f);
+        diaryText.color = c;
+    }
 
     void ShowPopup(Vector2 worldPos, string text, bool good)
     {
@@ -333,28 +398,54 @@ public class UIManager : MonoBehaviour
         vignette.sprite = MakeVignetteSprite();
 
         // Nefes barı (dalgıcı takip eder; anchor önemli değil, konumu her karede veriyoruz)
-        breathBar = MakeRect("BreathBar", h, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(90, 12));
-        MakeImage("Bg", breathBar, BarBg);
+        breathBar = MakeRect("BreathBar", h, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(110, 16));
+        MakeImage("Border", breathBar, new Color(0.02f, 0.05f, 0.08f, 0.9f));
+        Image bin = MakeImage("Bg", breathBar, BarBg);
+        Inset(bin.rectTransform, 3);
         breathFill = MakeImage("Fill", breathBar, Shallow);
+        Inset(breathFill.rectTransform, 3);
         MakeFill(breathFill, Image.FillMethod.Horizontal);
         breathLabel = MakeText("Label", breathBar, "", 22, TextAnchor.LowerCenter, Color.white);
         breathLabel.rectTransform.anchoredPosition = new Vector2(0, 26);
         breathLabel.rectTransform.sizeDelta = new Vector2(300, 30);
 
-        // Sol üst: termometre (dikey bar + derece)
-        RectTransform thermo = MakeRect("Thermo", h, new Vector2(0, 1), new Vector2(0, 1), new Vector2(50, -40), new Vector2(26, 150));
-        thermo.pivot = new Vector2(0.5f, 1);
-        MakeImage("Bg", thermo, BarBg);
-        thermoFill = MakeImage("Fill", thermo, Shallow);
+        // Sol üst: termometre kutusu (cam tüp + hazne + çentikler + derece)
+        RectTransform tb = MakeBox("ThermoBox", h, new Vector2(0, 1), new Vector2(24, -24), new Vector2(290, 200));
+        RectTransform tube = MakeRect("Tube", tb, new Vector2(0, 1), new Vector2(0, 1), new Vector2(34, -18), new Vector2(30, 128));
+        tube.pivot = new Vector2(0, 1);
+        MakeImage("Glass", tube, Color.white);
+        Image tin = MakeImage("Inner", tube, new Color(0.02f, 0.08f, 0.12f, 1f));
+        Inset(tin.rectTransform, 4);
+        thermoFill = MakeImage("Fill", tube, Shallow);
+        Inset(thermoFill.rectTransform, 6);
         MakeFill(thermoFill, Image.FillMethod.Vertical);
-        thermoText = MakeText("Temp", h, "22 °C", 34, TextAnchor.UpperLeft, Color.white);
-        SetRect(thermoText.rectTransform, new Vector2(0, 1), new Vector2(80, -40), new Vector2(200, 50));
-        TMP_Text thermoLabel = MakeText("TempLabel", h, "Deniz suyu", 20, TextAnchor.UpperLeft, new Color(1, 1, 1, 0.7f));
-        SetRect(thermoLabel.rectTransform, new Vector2(0, 1), new Vector2(80, -80), new Vector2(200, 30));
+        RectTransform bulb = MakeRect("Bulb", tb, new Vector2(0, 1), new Vector2(0, 1), new Vector2(49, -160), new Vector2(54, 54));
+        Image bulbGlass = bulb.gameObject.AddComponent<Image>();
+        bulbGlass.sprite = PixelArt.Disc();
+        bulbGlass.raycastTarget = false;
+        RectTransform bulbIn = MakeRect("BulbFill", bulb, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(40, 40));
+        thermoBulb = bulbIn.gameObject.AddComponent<Image>();
+        thermoBulb.sprite = PixelArt.Disc();
+        thermoBulb.raycastTarget = false;
+        for (int i = 1; i < ThermoStages; i++) // her aşama için bir çentik
+        {
+            RectTransform tick = MakeRect("Tick", tube, new Vector2(1, 0), new Vector2(1, 0), new Vector2(4, 6 + i * (116f / ThermoStages)), new Vector2(10, 3));
+            tick.pivot = new Vector2(0, 0.5f);
+            MakeImage("Line", tick, new Color(1, 1, 1, 0.7f));
+        }
+        thermoText = MakeText("Temp", tb, "22 °C", 64, TextAnchor.UpperLeft, Color.white);
+        SetRect(thermoText.rectTransform, new Vector2(0, 1), new Vector2(100, -14), new Vector2(190, 80));
+        thermoText.fontStyle = FontStyles.Bold;
+        TMP_Text thermoLabel = MakeText("TempLabel", tb, "DENİZ SUYU", 22, TextAnchor.UpperLeft, Mucilage);
+        SetRect(thermoLabel.rectTransform, new Vector2(0, 1), new Vector2(102, -92), new Vector2(190, 30));
+        stageText = MakeText("Stage", tb, "Aşama 1", 24, TextAnchor.UpperLeft, Accent);
+        SetRect(stageText.rectTransform, new Vector2(0, 1), new Vector2(102, -124), new Vector2(190, 60));
 
-        // Orta üst: skor + kombo
-        scoreText = MakeText("Score", h, "0", 56, TextAnchor.UpperCenter, Color.white);
-        SetRect(scoreText.rectTransform, new Vector2(0.5f, 1), new Vector2(0, -25), new Vector2(500, 70));
+        // Orta üst: skor kutusu
+        MakeBox("ScoreBox", h, new Vector2(0.5f, 1), new Vector2(0, -14), new Vector2(460, 140));
+        scoreText = MakeText("Score", h, "0", 64, TextAnchor.UpperCenter, Color.white);
+        SetRect(scoreText.rectTransform, new Vector2(0.5f, 1), new Vector2(0, -22), new Vector2(500, 76));
+        scoreText.fontStyle = FontStyles.Bold;
         comboText = MakeText("Combo", h, "", 30, TextAnchor.UpperCenter, Accent);
         SetRect(comboText.rectTransform, new Vector2(0.5f, 1), new Vector2(0, -95), new Vector2(500, 40));
         RectTransform comboBar = MakeRect("ComboBar", h, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -142), new Vector2(160, 6));
@@ -362,14 +453,22 @@ public class UIManager : MonoBehaviour
         comboFill = MakeImage("Fill", comboBar, Accent);
         MakeFill(comboFill, Image.FillMethod.Horizontal);
 
-        // Sağ üst: yoğunluk barı + yüzde
-        RectTransform dens = MakeRect("Density", h, new Vector2(1, 1), new Vector2(1, 1), new Vector2(-170, -55), new Vector2(260, 22));
+        // Sağ üst: yoğunluk kutusu (etiket, büyük yüzde, sınıra göre dolan bar ve %70 çizgisi)
+        RectTransform db = MakeBox("DensityBox", h, new Vector2(1, 1), new Vector2(-24, -24), new Vector2(330, 140));
+        densityText = MakeText("DensityLabel", db, "MÜSİLAJ YOĞUNLUĞU", 22, TextAnchor.UpperLeft, Mucilage);
+        SetRect(densityText.rectTransform, new Vector2(0, 1), new Vector2(20, -16), new Vector2(300, 30));
+        densityPct = MakeText("DensityPct", db, "%0", 56, TextAnchor.UpperRight, Color.white);
+        SetRect(densityPct.rectTransform, new Vector2(1, 1), new Vector2(-20, -8), new Vector2(200, 70));
+        densityPct.fontStyle = FontStyles.Bold;
+        RectTransform dens = MakeRect("Bar", db, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 22), new Vector2(-40, 22));
+        dens.pivot = new Vector2(0.5f, 0);
         MakeImage("Bg", dens, BarBg);
         densityFill = MakeImage("Fill", dens, Mucilage);
         MakeFill(densityFill, Image.FillMethod.Horizontal);
-        densityText = MakeText("DensityText", h, "Müsilaj %0", 28, TextAnchor.UpperRight, Color.white);
-        SetRect(densityText.rectTransform, new Vector2(1, 1), new Vector2(-40, -75), new Vector2(400, 40));
-        densityText.rectTransform.pivot = new Vector2(1, 1);
+        RectTransform warn = MakeRect("Warn", dens, new Vector2(0.7f / 0.85f, 0), new Vector2(0.7f / 0.85f, 1), Vector2.zero, new Vector2(3, 8));
+        MakeImage("Line", warn, Bad);
+        TMP_Text limit = MakeText("Limit", db, "sınır %85", 18, TextAnchor.LowerRight, new Color(1, 1, 1, 0.6f));
+        SetRect(limit.rectTransform, new Vector2(1, 0), new Vector2(-20, 46), new Vector2(200, 24));
 
         // Rütbe bildirimi (ekran ortası, üstte)
         rankToast = MakeText("RankToast", h, "", 48, TextAnchor.MiddleCenter, new Color(Accent.r, Accent.g, Accent.b, 0f));
@@ -377,10 +476,10 @@ public class UIManager : MonoBehaviour
 
         // Skorun altında rütbe satırı
         rankLine = MakeText("RankLine", h, "", 24, TextAnchor.UpperCenter, new Color(1, 1, 1, 0.75f));
-        SetRect(rankLine.rectTransform, new Vector2(0.5f, 1), new Vector2(0, -155), new Vector2(800, 34));
+        SetRect(rankLine.rectTransform, new Vector2(0.5f, 1), new Vector2(0, -162), new Vector2(800, 34));
 
         // Kriz haberi bandı (üst orta, rütbe satırının altında)
-        RectTransform cb = MakeRect("Crisis", h, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -195), new Vector2(1100, 86));
+        RectTransform cb = MakeRect("Crisis", h, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -200), new Vector2(1100, 86));
         cb.pivot = new Vector2(0.5f, 1);
         crisisBox = cb.gameObject;
         crisisBg = MakeImage("Bg", cb, new Color(0.02f, 0.1f, 0.14f, 0.85f));
@@ -397,6 +496,11 @@ public class UIManager : MonoBehaviour
         // Boru ipucu (borunun üstünü takip eder)
         pipePrompt = MakeText("PipePrompt", h, "", 24, TextAnchor.MiddleCenter, Color.white);
         pipePrompt.rectTransform.sizeDelta = new Vector2(420, 40);
+
+        // Deniz'in günlüğü (alt orta)
+        diaryText = MakeText("Diary", h, "", 30, TextAnchor.LowerCenter, Color.white);
+        SetRect(diaryText.rectTransform, new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(1400, 90));
+        diaryText.gameObject.SetActive(false);
 
         // Uçan puan yazıları havuzu
         popups = new TMP_Text[PopupCount];
@@ -415,13 +519,40 @@ public class UIManager : MonoBehaviour
     void BuildMenu()
     {
         RectTransform p = MakePanel("Menu");
+        p.GetComponent<Image>().color = new Color(0.02f, 0.12f, 0.17f, 0.6f); // arkada piksel deniz görünsün
         menuPanel = p.gameObject;
 
-        TMP_Text title = MakeText("Title", p, "MARMARA'NIN NEFESİ", 96, TextAnchor.MiddleCenter, Color.white);
-        SetRect(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, 260), new Vector2(1600, 130));
+        // Oyun logosu: piksel yazı başlık + dalgıç
+        Sprite titleSprite = PixelArt.Title("title", new[] { "MARMARA'NIN", "NEFESİ" }, Color.white, Accent);
+        RectTransform tr = MakeRect("Logo", p, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 300), titleSprite.rect.size * 9f);
+        Image titleImg = tr.gameObject.AddComponent<Image>();
+        titleImg.sprite = titleSprite;
+        titleImg.raycastTarget = false;
+        RectTransform dr = MakeRect("Diver", p, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(420, 230), new Vector2(16, 8) * 10f);
+        Image diverImg = dr.gameObject.AddComponent<Image>();
+        diverImg.sprite = PixelArt.Diver(0);
+        diverImg.raycastTarget = false;
 
         TMP_Text tag = MakeText("Tagline", p, "Deniz nefes alamıyor, sen de alamıyorsun.", 38, TextAnchor.MiddleCenter, Mucilage);
-        SetRect(tag.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, 170), new Vector2(1600, 60));
+        SetRect(tag.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, 150), new Vector2(1600, 60));
+
+        // Tema künyesi: COP31 (sol üst) ve SDG 14 (sağ üst)
+        Texture2D logoTex = Resources.Load<Texture2D>("cop31_logo"); // Assets/Resources/cop31_logo.png varsa gösterilir
+        float copX = 40f;
+        if (logoTex)
+        {
+            RectTransform lr = MakeRect("Cop31Logo", p, new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -30), new Vector2(150, 150));
+            lr.pivot = new Vector2(0, 1);
+            Image logo = lr.gameObject.AddComponent<Image>();
+            logo.sprite = Sprite.Create(logoTex, new Rect(0, 0, logoTex.width, logoTex.height), new Vector2(0.5f, 0.5f));
+            logo.preserveAspect = true;
+            logo.raycastTarget = false;
+            copX = 210f;
+        }
+        TMP_Text cop = MakeText("Cop31", p, "<b>COP31</b>\n<size=75%>Antalya, Türkiye · 2026</size>", 32, TextAnchor.UpperLeft, Color.white);
+        SetRect(cop.rectTransform, new Vector2(0, 1), new Vector2(copX, -40), new Vector2(500, 100));
+        TMP_Text sdg = MakeText("Sdg", p, "<b>SDG 14 · Sudaki Yaşam</b>\n<size=75%>Okyanuslar ve Denizler</size>", 32, TextAnchor.UpperRight, Color.white);
+        SetRect(sdg.rectTransform, new Vector2(1, 1), new Vector2(-40, -40), new Vector2(600, 100));
 
         TMP_Text how = MakeText("HowTo", p,
             "WASD: Yüz      Sol tık (basılı): Müsilajı em      E (basılı): Atık su borusunu tıka\n" +
@@ -429,13 +560,62 @@ public class UIManager : MonoBehaviour
             "Koyu çekirdekler müsilajı besler. Sıkışan balıkları kurtar, ama onları emme!\n" +
             "Dünyadan gelen haberlere kulak ver. Müsilaj %85'i kaplarsa oyun biter.",
             30, TextAnchor.MiddleCenter, Color.white);
-        SetRect(how.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, 10), new Vector2(1500, 220));
+        SetRect(how.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, -10), new Vector2(1500, 220));
 
-        MakeButton(p, "Dal  (SPACE)", new Vector2(-230, -170), () => GameManager.I.StartGame());
-        MakeButton(p, "Rütbeler", new Vector2(230, -170), () => { ranksOpen = true; ranksPanel.SetActive(true); });
+        MakeButton(p, "Dal  (SPACE)", new Vector2(-540, -200), () => GameManager.I.StartGame(), 330f);
+        MakeButton(p, "Rütbeler", new Vector2(-180, -200), () => { ranksOpen = true; ranksPanel.SetActive(true); }, 330f);
+        MakeButton(p, "Skorlar", new Vector2(180, -200), OpenScores, 330f);
+        MakeButton(p, "Hikâye", new Vector2(540, -200), ShowIntro, 330f);
 
-        menuBest = MakeText("Best", p, "", 28, TextAnchor.MiddleCenter, new Color(1, 1, 1, 0.7f));
-        SetRect(menuBest.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, -270), new Vector2(800, 40));
+        menuBest = MakeText("Best", p, "", 28, TextAnchor.MiddleCenter, new Color(1, 1, 1, 0.8f));
+        SetRect(menuBest.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, -300), new Vector2(800, 40));
+    }
+
+    // Hikâyeyi menüden yeniden izle
+    void ShowIntro()
+    {
+        introDone = false;
+        IntroOpen = true;
+        introTime = 0f;
+        introStarted = true; // menüden açılınca zaten tıklandı, ses hemen başlayabilir
+        introSpoken = 0;
+        if (Narrator.HasRecording) Narrator.PlayRecording(gameObject);
+        introPanel.SetActive(true);
+    }
+
+    // Skorlar ekranı: kayıtlı tüm oyunlar arasından en iyi 10'u (JSON geçmişinden)
+    void OpenScores()
+    {
+        List<ScoreRecord> list = new List<ScoreRecord>(ScoreManager.I.History);
+        list.Sort((a, b) => b.score.CompareTo(a.score));
+        string text = "<color=#B8AE94><b>#<pos=7%>Skor<pos=24%>Rütbe<pos=52%>Süre<pos=64%>Balık<pos=76%>Tarih</b></color>\n";
+        if (list.Count == 0) text += "\nHenüz kayıtlı oyun yok. İlk dalışını yap!";
+        for (int i = 0; i < Mathf.Min(10, list.Count); i++)
+        {
+            ScoreRecord r = list[i];
+            text += $"{i + 1}.<pos=7%>{r.score:N0}<pos=24%>{r.rank}<pos=52%>{r.seconds / 60}:{r.seconds % 60:00}<pos=64%>{r.fish}<pos=76%>{r.date}\n";
+        }
+        scoresList.text = text;
+        scoresOpen = true;
+        scoresPanel.SetActive(true);
+    }
+
+    void BuildScores()
+    {
+        RectTransform p = MakePanel("Scores");
+        p.GetComponent<Image>().color = new Color(0.01f, 0.08f, 0.11f, 0.98f);
+        scoresPanel = p.gameObject;
+
+        TMP_Text title = MakeText("Title", p, "SKORLAR", 72, TextAnchor.MiddleCenter, Color.white);
+        SetRect(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, 380), new Vector2(1200, 100));
+
+        scoresList = MakeText("List", p, "", 32, TextAnchor.UpperLeft, Color.white);
+        SetRect(scoresList.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, 300), new Vector2(1300, 620));
+        scoresList.rectTransform.pivot = new Vector2(0.5f, 1);
+        scoresList.alignment = TextAlignmentOptions.TopLeft;
+
+        MakeButton(p, "Geri", new Vector2(0, -400), () => { scoresOpen = false; scoresPanel.SetActive(false); });
+        scoresPanel.SetActive(false);
     }
 
     void BuildPause()
@@ -484,29 +664,64 @@ public class UIManager : MonoBehaviour
         ranksPanel.SetActive(false);
     }
 
+    // Satırın başlama zamanı: önceki satırların seslendirme süreleri toplamı
+    static float LineStart(int i)
+    {
+        float t = 0f;
+        for (int k = 0; k < i; k++) t += LineTime(IntroLines[k]);
+        return t;
+    }
+
     void UpdateIntro()
     {
+        float allShown = LineStart(IntroLines.Length - 1) + 1.5f;
+
+        // Tarayıcı ilk tıklamadan önce ses çalmaya izin vermez: hikâye bir tıkla/tuşla başlar
+        if (!introStarted)
+        {
+            introHint.text = "Hikâyeyi dinlemek için tıkla";
+            Color c0 = introHint.color;
+            c0.a = 0.6f + 0.4f * Mathf.Sin(Time.unscaledTime * 3f);
+            introHint.color = c0;
+            if (!Input.anyKeyDown) return;
+            introStarted = true;
+            introTime = 0f;
+            introSpoken = 0;
+            if (Narrator.HasRecording) Narrator.PlayRecording(gameObject);
+            return;
+        }
+
         introTime += Time.unscaledDeltaTime; // menüde zaman durduğu için ölçeksiz zaman
 
         for (int i = 0; i < introTexts.Length; i++)
         {
             Color c = introTexts[i].color;
-            c.a = Mathf.Clamp01(introTime - i * IntroLineDelay);
+            c.a = Mathf.Clamp01(introTime - LineStart(i));
             introTexts[i].color = c;
+
+            // Kayıt yoksa her satır belirirken boğuk sesle okunur (son satır imza, okunmaz)
+            if (i == introSpoken && introTime >= LineStart(i))
+            {
+                if (!Narrator.HasRecording && i < IntroLines.Length - 1) Narrator.Speak(IntroLines[i]);
+                introSpoken++;
+            }
         }
 
-        float allShown = introTexts.Length * IntroLineDelay;
+        introHint.text = introTime < allShown ? "Atlamak için bir tuşa bas" : "Devam etmek için bir tuşa bas";
         Color hc = introHint.color;
-        hc.a = Mathf.Clamp01(introTime - allShown) * (0.6f + 0.4f * Mathf.Sin(introTime * 3f));
+        hc.a = (introTime < allShown ? 0.35f : 1f) * (0.6f + 0.4f * Mathf.Sin(introTime * 3f));
         introHint.color = hc;
 
-        // Bir tuş/tık: önce tüm satırları göster, ikincisinde menüye geç
+        // Bir tuş/tık: hikâye bitmediyse önce tüm satırları göster, sonra menüye geç
         if (!Input.anyKeyDown) return;
         if (introTime < allShown)
         {
             introTime = allShown;
+            introSpoken = IntroLines.Length;
+            Narrator.Stop();
             return;
         }
+        Narrator.Stop();
         introDone = true;
         IntroOpen = false;
         introPanel.SetActive(false);
@@ -549,10 +764,29 @@ public class UIManager : MonoBehaviour
         TMP_Text info = MakeText("Info", card, InfoText, 30, TextAnchor.MiddleCenter, Color.white);
         info.rectTransform.sizeDelta = new Vector2(-60, -20);
 
-        MakeButton(p, "Yeniden dal  (R)", new Vector2(0, -360), () => GameManager.I.Restart());
+        MakeButton(p, "Yeniden dal  (R)", new Vector2(-230, -360), () => GameManager.I.Restart());
+        MakeButton(p, "Ana menü  (M)", new Vector2(230, -360), () => GameManager.I.GoToMenu());
     }
 
     // ---------- Yardımcılar ----------
+
+    // HUD kutusu: mercan çerçeve + koyu yarı saydam iç
+    RectTransform MakeBox(string name, Transform parent, Vector2 anchor, Vector2 pos, Vector2 size)
+    {
+        RectTransform box = MakeRect(name, parent, anchor, anchor, pos, size);
+        box.pivot = anchor;
+        MakeImage("Border", box, new Color(Accent.r, Accent.g, Accent.b, 0.85f));
+        Image inner = MakeImage("Inner", box, BoxBg);
+        Inset(inner.rectTransform, 3);
+        return box;
+    }
+
+    // Ebeveyni kaplayan bir öğenin kenarlarından px kadar içeri çeker
+    static void Inset(RectTransform rt, float px)
+    {
+        rt.offsetMin = new Vector2(px, px);
+        rt.offsetMax = new Vector2(-px, -px);
+    }
 
     RectTransform MakePanel(string name)
     {
@@ -625,6 +859,7 @@ public class UIManager : MonoBehaviour
         RectTransform rt = MakeRect(name, parent, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(400, 60));
         TextMeshProUGUI t = rt.gameObject.AddComponent<TextMeshProUGUI>();
         t.font = font;
+        if (shadowMat) t.fontSharedMaterial = shadowMat;
         t.text = text;
         t.fontSize = size;
         t.alignment = ToTmp(align);
@@ -648,9 +883,9 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    void MakeButton(Transform parent, string label, Vector2 pos, UnityEngine.Events.UnityAction onClick)
+    void MakeButton(Transform parent, string label, Vector2 pos, UnityEngine.Events.UnityAction onClick, float width = 420f)
     {
-        RectTransform rt = MakeRect("Button", parent, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(420, 90));
+        RectTransform rt = MakeRect("Button", parent, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(width, 90));
         Image img = rt.gameObject.AddComponent<Image>();
         img.color = Accent;
         Button btn = rt.gameObject.AddComponent<Button>();

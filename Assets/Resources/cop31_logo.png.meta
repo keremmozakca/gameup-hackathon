@@ -1,0 +1,884 @@
+fileFormatVersion: 2
+guid: 8fbed5d31ea13204bbef2b233d9d513e
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 4649336284768059546
+    second: cop31_logo_0
+  - first:
+      213: 8385158346991792701
+    second: cop31_logo_1
+  - first:
+      213: -4256319308250583203
+    second: cop31_logo_2
+  - first:
+      213: -5789135554381455098
+    second: cop31_logo_3
+  - first:
+      213: 4987791690280039026
+    second: cop31_logo_4
+  - first:
+      213: 5949838553731312595
+    second: cop31_logo_5
+  - first:
+      213: 9170155079882582179
+    second: cop31_logo_6
+  - first:
+      213: -5265786177944386874
+    second: cop31_logo_7
+  - first:
+      213: 7396696823670545182
+    second: cop31_logo_8
+  - first:
+      213: 1116347754520446554
+    second: cop31_logo_9
+  - first:
+      213: -77974717675502830
+    second: cop31_logo_10
+  - first:
+      213: -3177269988670278927
+    second: cop31_logo_11
+  - first:
+      213: 8861201273024447818
+    second: cop31_logo_12
+  - first:
+      213: -8421239245861509498
+    second: cop31_logo_13
+  - first:
+      213: 7027675921967092399
+    second: cop31_logo_14
+  - first:
+      213: 6196893384905863677
+    second: cop31_logo_15
+  - first:
+      213: 4058408530428081120
+    second: cop31_logo_16
+  - first:
+      213: -3460174008911368579
+    second: cop31_logo_17
+  - first:
+      213: -8599089302056035249
+    second: cop31_logo_18
+  - first:
+      213: 2170242135320200028
+    second: cop31_logo_19
+  - first:
+      213: 8695729425655663987
+    second: cop31_logo_20
+  - first:
+      213: 7674669150324923741
+    second: cop31_logo_21
+  - first:
+      213: 1237548092037499155
+    second: cop31_logo_22
+  - first:
+      213: 464603800148129357
+    second: cop31_logo_23
+  - first:
+      213: 8863329113049677575
+    second: cop31_logo_24
+  - first:
+      213: 1344940665099141156
+    second: cop31_logo_25
+  - first:
+      213: -200611211871454247
+    second: cop31_logo_26
+  - first:
+      213: -153182849737648733
+    second: cop31_logo_27
+  - first:
+      213: 6650550945335246296
+    second: cop31_logo_28
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: cop31_logo_0
+      rect:
+        serializedVersion: 2
+        x: 1100
+        y: 846
+        width: 131
+        height: 311
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a904feeb7b2c58040800000000000000
+      internalID: 4649336284768059546
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_1
+      rect:
+        serializedVersion: 2
+        x: 1120
+        y: 802
+        width: 283
+        height: 495
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d32f8d117111e5470800000000000000
+      internalID: 8385158346991792701
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_2
+      rect:
+        serializedVersion: 2
+        x: 1203
+        y: 997
+        width: 305
+        height: 337
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d5f661dd3248ee4c0800000000000000
+      internalID: -4256319308250583203
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_3
+      rect:
+        serializedVersion: 2
+        x: 1229
+        y: 774
+        width: 453
+        height: 638
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 601628ca2ebd8afa0800000000000000
+      internalID: -5789135554381455098
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_4
+      rect:
+        serializedVersion: 2
+        x: 1313
+        y: 749
+        width: 434
+        height: 380
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 27279c8ad12383540800000000000000
+      internalID: 4987791690280039026
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_5
+      rect:
+        serializedVersion: 2
+        x: 1533
+        y: 949
+        width: 187
+        height: 352
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3db241a14a2129250800000000000000
+      internalID: 5949838553731312595
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_6
+      rect:
+        serializedVersion: 2
+        x: 1833
+        y: 1123
+        width: 216
+        height: 224
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3a825a7a57fe24f70800000000000000
+      internalID: 9170155079882582179
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_7
+      rect:
+        serializedVersion: 2
+        x: 2062
+        y: 1123
+        width: 224
+        height: 224
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6c28678de5b2ce6b0800000000000000
+      internalID: -5265786177944386874
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_8
+      rect:
+        serializedVersion: 2
+        x: 2306
+        y: 1125
+        width: 166
+        height: 221
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e1b942e529856a660800000000000000
+      internalID: 7396696823670545182
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_9
+      rect:
+        serializedVersion: 2
+        x: 2486
+        y: 1124
+        width: 150
+        height: 223
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a560ff93e501e7f00800000000000000
+      internalID: 1116347754520446554
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_10
+      rect:
+        serializedVersion: 2
+        x: 2655
+        y: 1125
+        width: 85
+        height: 222
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2138d7b486afaeef0800000000000000
+      internalID: -77974717675502830
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_11
+      rect:
+        serializedVersion: 2
+        x: 1834
+        y: 915
+        width: 134
+        height: 154
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1f27cc977c118e3d0800000000000000
+      internalID: -3177269988670278927
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_12
+      rect:
+        serializedVersion: 2
+        x: 1979
+        y: 1033
+        width: 45
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a458cd1fb9f49fa70800000000000000
+      internalID: 8861201273024447818
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_13
+      rect:
+        serializedVersion: 2
+        x: 2068
+        y: 1033
+        width: 44
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 686a8d5068fb12b80800000000000000
+      internalID: -8421239245861509498
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_14
+      rect:
+        serializedVersion: 2
+        x: 2127
+        y: 915
+        width: 129
+        height: 154
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fa21a6d4402578160800000000000000
+      internalID: 7027675921967092399
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_15
+      rect:
+        serializedVersion: 2
+        x: 2265
+        y: 915
+        width: 140
+        height: 154
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: df1384673b9cff550800000000000000
+      internalID: 6196893384905863677
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_16
+      rect:
+        serializedVersion: 2
+        x: 2412
+        y: 1033
+        width: 44
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0e3b4995e0d525830800000000000000
+      internalID: 4058408530428081120
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_17
+      rect:
+        serializedVersion: 2
+        x: 2466
+        y: 915
+        width: 153
+        height: 154
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d7e6cc9521efaffc0800000000000000
+      internalID: -3460174008911368579
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_18
+      rect:
+        serializedVersion: 2
+        x: 2629
+        y: 915
+        width: 111
+        height: 154
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f4c9617f6d5e9a880800000000000000
+      internalID: -8599089302056035249
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_19
+      rect:
+        serializedVersion: 2
+        x: 1979
+        y: 914
+        width: 133
+        height: 112
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c53885049bf3e1e10800000000000000
+      internalID: 2170242135320200028
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_20
+      rect:
+        serializedVersion: 2
+        x: 2412
+        y: 915
+        width: 44
+        height: 111
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 37d0e1737df6da870800000000000000
+      internalID: 8695729425655663987
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_21
+      rect:
+        serializedVersion: 2
+        x: 1472
+        y: 748
+        width: 170
+        height: 84
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d5d14c91ee6e18a60800000000000000
+      internalID: 7674669150324923741
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_22
+      rect:
+        serializedVersion: 2
+        x: 1834
+        y: 794
+        width: 67
+        height: 66
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3198b52de67ac2110800000000000000
+      internalID: 1237548092037499155
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_23
+      rect:
+        serializedVersion: 2
+        x: 1988
+        y: 794
+        width: 61
+        height: 66
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d463025d1ba927600800000000000000
+      internalID: 464603800148129357
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_24
+      rect:
+        serializedVersion: 2
+        x: 2137
+        y: 794
+        width: 55
+        height: 66
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 70f34be4eded00b70800000000000000
+      internalID: 8863329113049677575
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_25
+      rect:
+        serializedVersion: 2
+        x: 2265
+        y: 794
+        width: 68
+        height: 66
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 420463bb8603aa210800000000000000
+      internalID: 1344940665099141156
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_26
+      rect:
+        serializedVersion: 2
+        x: 2419
+        y: 794
+        width: 48
+        height: 66
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9dbf07a6a29473df0800000000000000
+      internalID: -200611211871454247
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_27
+      rect:
+        serializedVersion: 2
+        x: 2538
+        y: 794
+        width: 62
+        height: 66
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3a594bf7209cfddf0800000000000000
+      internalID: -153182849737648733
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cop31_logo_28
+      rect:
+        serializedVersion: 2
+        x: 2672
+        y: 794
+        width: 68
+        height: 66
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8dd785149d08b4c50800000000000000
+      internalID: 6650550945335246296
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      cop31_logo_0: 4649336284768059546
+      cop31_logo_1: 8385158346991792701
+      cop31_logo_10: -77974717675502830
+      cop31_logo_11: -3177269988670278927
+      cop31_logo_12: 8861201273024447818
+      cop31_logo_13: -8421239245861509498
+      cop31_logo_14: 7027675921967092399
+      cop31_logo_15: 6196893384905863677
+      cop31_logo_16: 4058408530428081120
+      cop31_logo_17: -3460174008911368579
+      cop31_logo_18: -8599089302056035249
+      cop31_logo_19: 2170242135320200028
+      cop31_logo_2: -4256319308250583203
+      cop31_logo_20: 8695729425655663987
+      cop31_logo_21: 7674669150324923741
+      cop31_logo_22: 1237548092037499155
+      cop31_logo_23: 464603800148129357
+      cop31_logo_24: 8863329113049677575
+      cop31_logo_25: 1344940665099141156
+      cop31_logo_26: -200611211871454247
+      cop31_logo_27: -153182849737648733
+      cop31_logo_28: 6650550945335246296
+      cop31_logo_3: -5789135554381455098
+      cop31_logo_4: 4987791690280039026
+      cop31_logo_5: 5949838553731312595
+      cop31_logo_6: 9170155079882582179
+      cop31_logo_7: -5265786177944386874
+      cop31_logo_8: 7396696823670545182
+      cop31_logo_9: 1116347754520446554
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
