@@ -25,6 +25,7 @@ public class UIManager : MonoBehaviour
 
     const float ThermoStages = 8f;    // Termometre kaç aşamada tamamen dolar (sadece görsel)
     const float RankToastTime = 2.5f; // Rütbe bildiriminin ekranda kalma süresi
+    const float VignetteStart = 0.7f;   // Yoğunluk bu orana gelince ekran kenarları kararmaya başlar
 
     const string InfoText =
         "Müsilaj; ısınan deniz suyu, arıtılmamış atık sular ve durgun su birleştiğinde çoğalır.\n" +
@@ -47,6 +48,7 @@ public class UIManager : MonoBehaviour
     Image densityFill;
     TMP_Text densityText;
     TMP_Text rankToast;
+    Image vignette;
     float rankToastTimer;
 
     // Ekranlar
@@ -130,6 +132,12 @@ public class UIManager : MonoBehaviour
         densityFill.color = Color.Lerp(Mucilage, Accent, Mathf.InverseLerp(0.6f, 1f, danger));
         densityText.text = $"Müsilaj %{grid.Density * 100f:0}";
 
+        // Vignette: yoğunluk %70'ten kayıp sınırına giderken kenarlar müsilaj rengiyle kararır ve nabız atar
+        float v = Mathf.InverseLerp(VignetteStart, cfg.loseDensity, grid.Density);
+        Color vc = vignette.color;
+        vc.a = v * (0.75f + 0.25f * Mathf.Sin(Time.time * 4f));
+        vignette.color = vc;
+
         // Rütbe bildirimi: yavaşça kaybolur
         if (rankToastTimer > 0f)
         {
@@ -192,6 +200,10 @@ public class UIManager : MonoBehaviour
     {
         hud = MakeRect("HUD", canvasRt, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero).gameObject;
         RectTransform h = hud.GetComponent<RectTransform>();
+
+        // Vignette en önce eklenir ki diğer HUD öğelerinin arkasında kalsın
+        vignette = MakeImage("Vignette", h, new Color(0.18f, 0.16f, 0.1f, 0f));
+        vignette.sprite = MakeVignetteSprite();
 
         // Nefes barı (dalgıcı takip eder; anchor önemli değil, konumu her karede veriyoruz)
         breathBar = MakeRect("BreathBar", h, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(90, 12));
@@ -322,6 +334,25 @@ public class UIManager : MonoBehaviour
         img.color = color;
         img.raycastTarget = false;
         return img;
+    }
+
+    // Ortası şeffaf, kenarlara doğru koyulaşan daire biçimli doku
+    static Sprite MakeVignetteSprite()
+    {
+        const int size = 128;
+        Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        tex.wrapMode = TextureWrapMode.Clamp;
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                Vector2 d = new Vector2(x, y) / (size - 1) * 2f - Vector2.one; // -1..1
+                float a = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.55f, 1.35f, d.magnitude));
+                tex.SetPixel(x, y, new Color(1, 1, 1, a));
+            }
+        }
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f));
     }
 
     // fillAmount'un çalışması için Image'ın "Filled" tipte ve bir sprite'ı olması gerekir

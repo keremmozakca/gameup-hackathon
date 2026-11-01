@@ -65,6 +65,37 @@ public class MucilageGrid : MonoBehaviour
             spreadTimer = 0f;
             SpreadTick();
         }
+
+        PulseCores();
+    }
+
+    // Çekirdekler nabız gibi atar: hafifçe büyüyüp küçülür ve renkleri açılıp koyulaşır
+    void PulseCores()
+    {
+        float p = 0.5f + 0.5f * Mathf.Sin(Time.time * 5f);
+        float s = 1f + 0.15f * p;
+        Matrix4x4 m = Matrix4x4.Scale(new Vector3(s, s, 1f));
+
+        for (int x = 0; x < W; x++)
+        {
+            for (int y = 0; y < H; y++)
+            {
+                if (!isCore[x, y]) continue;
+                Vector3Int c = new Vector3Int(x, y, 0);
+                tilemap.SetTransformMatrix(c, m);
+                tilemap.SetColor(c, CellColor(x, y, p));
+            }
+        }
+    }
+
+    // Karenin rengi: canı azaldıkça solar (emme geri bildirimi). pulse sadece çekirdekte kullanılır.
+    Color CellColor(int x, int y, float pulse = 0f)
+    {
+        bool core = isCore[x, y];
+        Color c = core ? Color.Lerp(coreColor, mucilageColor, 0.3f * pulse) : mucilageColor;
+        float ratio = hp[x, y] / (core ? cfg.coreHp : cfg.mucilageHp);
+        c.a = Mathf.Lerp(0.25f, 1f, ratio);
+        return c;
     }
 
     Tile MakeTile(Color color)
@@ -72,6 +103,7 @@ public class MucilageGrid : MonoBehaviour
         Tile t = ScriptableObject.CreateInstance<Tile>();
         t.sprite = squareSprite;
         t.color = color;
+        t.flags = TileFlags.None; // Kare kare renk ve boyut değiştirebilmek için kilitleri kaldır
         return t;
     }
 
@@ -153,6 +185,7 @@ public class MucilageGrid : MonoBehaviour
         hp[c.x, c.y] = core ? cfg.coreHp : cfg.mucilageHp;
         isCore[c.x, c.y] = core;
         tilemap.SetTile((Vector3Int)c, core ? coreTile : mucilageTile);
+        tilemap.SetColor((Vector3Int)c, CellColor(c.x, c.y));
     }
 
     // Bir karenin canını azaltır. Can 0'a inerse kare temizlenir ve OnCellCleared haber verir.
@@ -161,7 +194,11 @@ public class MucilageGrid : MonoBehaviour
         if (!IsInfected(c)) return;
 
         hp[c.x, c.y] -= amount;
-        if (hp[c.x, c.y] > 0f) return;
+        if (hp[c.x, c.y] > 0f)
+        {
+            tilemap.SetColor((Vector3Int)c, CellColor(c.x, c.y));
+            return;
+        }
 
         bool wasCore = isCore[c.x, c.y];
         hp[c.x, c.y] = 0f;

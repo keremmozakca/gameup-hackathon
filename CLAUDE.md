@@ -41,6 +41,10 @@ Ana fikir: "Deniz nefes alamıyor, sen de alamıyorsun." Hedef oynanış: tur ba
 9. `UIManager.cs` ("UI" objesi): Canvas ve tüm öğeler runtime'da kodla kurulur, yazılar TextMeshPro (Assets/TextMesh Pro içe aktarıldı).
    HUD (nefes barı, termometre, skor + kombo + kombo süre barı, yoğunluk), rütbe bildirimi, ana menü, oyun sonu + bilgi kartı.
    Geçici OnGUI yazıları kaldırıldı. Kurulum menüsü: "Marmara > Arayüzü Kur".
+10. Cila (kısmen): `FxManager.cs` (sprite havuzuyla pop parçacıkları, çekirdekte ekran sarsıntısı), `SoundManager.cs`
+   (tüm sesler kodla üretilir, dosya yok), MucilageGrid'de çekirdek nabzı + emilen karenin solması, UIManager'da %70 üstü vignette.
+   İkisi "FX" objesinde. Kurulum menüsü: "Marmara > Efekt ve Sesleri Kur". Kalan cila: balıklar, atık su borusu, giriş ekranı.
+   Not: "LiberationSans SDF - Fallback.asset" Play'de dinamik glif ekledikçe değişir; commit'e alma (git checkout ile geri al).
 
 Mevcut GameConfig alanları: width, height, startMucilageCells, startCores, spreadInterval, spreadChance, coreSpreadChance, swimForce, mucilageSpeedMultiplier,
 mucilageHp, coreHp, suctionPower, suctionRange, suctionAngle,
