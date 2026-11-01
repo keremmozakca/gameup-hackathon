@@ -20,6 +20,9 @@ public class MucilageGrid : MonoBehaviour
     public int InfectedCount { get; private set; }
     public float Density => (float)InfectedCount / (W * H);
 
+    // Bir kare temizlenince haber verir (kare, çekirdek miydi?). Skor ve efektler bunu dinleyecek.
+    public event System.Action<Vector2Int, bool> OnCellCleared;
+
     Tilemap tilemap;
     float[,] hp;       // Her karenin "canı". 0 = temiz, 0'dan büyük = müsilajlı
     bool[,] isCore;    // Bu kare çekirdek mi?
@@ -142,9 +145,25 @@ public class MucilageGrid : MonoBehaviour
         if (IsInfected(c) && !core) return; // zaten müsilajlı, çekirdeğe de dönmüyorsa bir şey yapma
 
         if (!IsInfected(c)) InfectedCount++;
-        hp[c.x, c.y] = 1f;
+        hp[c.x, c.y] = core ? cfg.coreHp : cfg.mucilageHp;
         isCore[c.x, c.y] = core;
         tilemap.SetTile((Vector3Int)c, core ? coreTile : mucilageTile);
+    }
+
+    // Bir karenin canını azaltır. Can 0'a inerse kare temizlenir ve OnCellCleared haber verir.
+    public void Damage(Vector2Int c, float amount)
+    {
+        if (!IsInfected(c)) return;
+
+        hp[c.x, c.y] -= amount;
+        if (hp[c.x, c.y] > 0f) return;
+
+        bool wasCore = isCore[c.x, c.y];
+        hp[c.x, c.y] = 0f;
+        isCore[c.x, c.y] = false;
+        InfectedCount--;
+        tilemap.SetTile((Vector3Int)c, null);
+        OnCellCleared?.Invoke(c, wasCore);
     }
 
     public bool InBounds(Vector2Int c) => c.x >= 0 && c.x < W && c.y >= 0 && c.y < H;

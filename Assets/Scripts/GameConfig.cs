@@ -36,4 +36,21 @@ public class GameConfig : ScriptableObject
 
     [Tooltip("Müsilajın içindeyken hız çarpanı (0.5 = yarı hız)")]
     [Range(0f, 1f)] public float mucilageSpeedMultiplier = 0.5f;
+
+    // ---------- ADIM 5: EMME ----------
+    [Header("Emme")]
+    [Tooltip("Normal müsilaj karesinin canı. Emme gücüyle bu kadar saniyede temizlenir (gücü 1 ise)")]
+    public float mucilageHp = 0.3f;
+
+    [Tooltip("Çekirdeğin canı. Normal kareden çok daha dayanıklı")]
+    public float coreHp = 2f;
+
+    [Tooltip("Emme cihazının saniyede verdiği hasar")]
+    public float suctionPower = 1f;
+
+    [Tooltip("Emme konisinin menzili (kare cinsinden)")]
+    public float suctionRange = 3f;
+
+    [Tooltip("Emme konisinin toplam açısı (derece)")]
+    [Range(1f, 180f)] public float suctionAngle = 50f;
 }
