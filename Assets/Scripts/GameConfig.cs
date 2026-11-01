@@ -28,4 +28,12 @@ public class GameConfig : ScriptableObject
 
     [Tooltip("Her kontrolde bir çekirdeğin komşusuna bulaşma ihtimali (0.5 = %50)")]
     [Range(0f, 1f)] public float coreSpreadChance = 0.5f;
+
+    // ---------- ADIM 4: HAREKET ----------
+    [Header("Hareket")]
+    [Tooltip("Yüzme gücü. Büyüdükçe dalgıç hızlanır")]
+    public float swimForce = 25f;
+
+    [Tooltip("Müsilajın içindeyken hız çarpanı (0.5 = yarı hız)")]
+    [Range(0f, 1f)] public float mucilageSpeedMultiplier = 0.5f;
 }
